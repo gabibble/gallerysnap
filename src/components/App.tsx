@@ -310,9 +310,10 @@ export default function App() {
             setCurrentId(id);
             setNotice(null);
             setSaveStatus({ kind: 'idle' });
-            // A painting the app found goes to the outline screen (which has the
-            // "Include the frame" switch); one it couldn't find goes to the circles.
-            setView(p.status === 'good' && p.detection?.painting ? 'found' : 'adjust');
+            // Straight to the numbered circles, starting from the outline shown
+            // on the wall (with the frame, if it was included).
+            patch(id, { corners: activeCorners(p), includeFrame: false });
+            setView('adjust');
           }}
           onGoogle={saveToGoogle}
           onDownload={download}
