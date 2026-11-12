@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# OpenCV.js is copied from node_modules by scripts/copy-opencv.mjs
+/public/cv/opencv.js
+/test/fixtures/out/
