@@ -422,6 +422,11 @@
         painting: result.painting ? { corners: norm(result.painting.q), score: round3(result.painting.score) } : null,
         frame: result.frame ? { corners: norm(result.frame.q), score: round3(result.frame.score) } : null,
         confidence: round3(result.confidence),
+        // The strongest other outlines, so an AI suggestion can be snapped onto a
+        // real edge in the photo.
+        candidates: candidates.slice().sort(function (a2, b2) { return b2.score - a2.score; }).slice(0, 60).map(function (c) {
+          return { corners: norm(c.q), score: round3(c.score) };
+        }),
         debug: { candidates: candidates.length, lines: clusters.length, workSize: [w, h], all: root.GALLERYSNAP_DEBUG ? candidates.map(function (c) { return { q: norm(c.q), score: round3(c.score), sides: c.sides.map(round3), ring: round3(c.ringStrict), area: round3(c.area), source: c.source }; }) : undefined },
       };
     } finally {
