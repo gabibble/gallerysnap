@@ -25,17 +25,6 @@
 
   var WORK_SIZE = 1000;
 
-  function median(arr) {
-    var hist = new Uint32Array(256);
-    for (var i = 0; i < arr.length; i++) hist[arr[i]]++;
-    var half = arr.length / 2, acc = 0;
-    for (var v = 0; v < 256; v++) {
-      acc += hist[v];
-      if (acc >= half) return v;
-    }
-    return 128;
-  }
-
   // ---------- geometry helpers ----------
 
   function orderCorners(pts) {
@@ -430,7 +419,7 @@
         debug: { candidates: candidates.length, lines: clusters.length, workSize: [w, h], all: root.GALLERYSNAP_DEBUG ? candidates.map(function (c) { return { q: norm(c.q), score: round3(c.score), sides: c.sides.map(round3), ring: round3(c.ringStrict), area: round3(c.area), source: c.source }; }) : undefined },
       };
     } finally {
-      mats.forEach(function (m) { try { m.delete(); } catch (e) { /* already freed */ } });
+      mats.forEach(function (m) { try { m.delete(); } catch { /* already freed */ } });
     }
   }
 
