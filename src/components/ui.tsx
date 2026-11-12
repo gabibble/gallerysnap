@@ -85,8 +85,11 @@ export function Button({ variant = 'solid', size = 'lg', busy = false, className
       aria-busy={busy || undefined}
       className={`inline-flex items-center justify-center gap-3 border-2 font-sans font-bold leading-tight cursor-pointer transition-colors disabled:cursor-default disabled:opacity-60 ${sizes[size]} ${look} ${className}`}
     >
-      {busy && <span className="gs-spinner" aria-hidden />}
-      {children}
+      {/* Children sit in their own span so the spinner appearing doesn't trip up
+          React when a browser extension (e.g. page translation) has changed the
+          button's text. */}
+      {busy ? <span className="gs-spinner" aria-hidden /> : null}
+      <span className="inline-flex items-center justify-center gap-3">{children}</span>
     </button>
   );
 }

@@ -34,8 +34,8 @@ export function WallStep({ paintings, status, onFix, onGoogle, onDownload, onSta
         {working > 0 ? `Straightening ${total} paintings` : `${total} paintings straightened`}
       </h1>
       <p className="text-[19px] sm:text-[22px] text-muted text-center flex items-center gap-3" role="status">
-        {working > 0 && <span className="gs-spinner text-burgundy" aria-hidden />}
-        {sub}
+        {working > 0 ? <span className="gs-spinner text-burgundy" aria-hidden /> : null}
+        <span>{sub}</span>
       </p>
 
       <ul className="grid grid-cols-1 min-[520px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 w-full max-w-[1040px]">

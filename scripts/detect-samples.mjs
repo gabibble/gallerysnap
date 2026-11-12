@@ -25,7 +25,7 @@ const { cv } = await loadCv();
 
 const results = {};
 for (const file of fs.readdirSync(dir).filter((f) => /\.(jpe?g|png)$/i.test(f)).sort()) {
-  const { data, info } = await sharp(path.join(dir, file)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { data, info } = await sharp(path.join(dir, file)).rotate().ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const imageData = { data: new Uint8ClampedArray(data.buffer, data.byteOffset, data.length), width: info.width, height: info.height };
   const t0 = performance.now();
   const r = detect(cv, imageData);
@@ -36,7 +36,7 @@ for (const file of fs.readdirSync(dir).filter((f) => /\.(jpe?g|png)$/i.test(f)).
   const poly = (q, color) =>
     q ? `<polygon points="${q.corners.map((p) => `${p.x * info.width},${p.y * info.height}`).join(' ')}" fill="none" stroke="${color}" stroke-width="${Math.max(3, info.width / 250)}"/>` : '';
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${info.width}" height="${info.height}">${poly(r.frame, '#3b82f6')}${poly(r.painting, '#C9A14A')}</svg>`;
-  const drawn = await sharp(path.join(dir, file)).composite([{ input: Buffer.from(svg) }]).png().toBuffer();
+  const drawn = await sharp(path.join(dir, file)).rotate().composite([{ input: Buffer.from(svg) }]).png().toBuffer();
   await sharp(drawn).resize({ width: 700 }).jpeg().toFile(path.join(outDir, file));
 }
 fs.writeFileSync(path.join(outDir, 'results.json'), JSON.stringify(results, null, 2));

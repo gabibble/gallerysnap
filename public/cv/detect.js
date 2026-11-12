@@ -109,12 +109,6 @@
     return m;
   }
 
-  function quadDistance(a, b) {
-    var d = 0;
-    for (var i = 0; i < 4; i++) d = Math.max(d, Math.hypot(a[i].x - b[i].x, a[i].y - b[i].y));
-    return d;
-  }
-
   // ---------- line helpers ----------
 
   function lineFromSeg(x1, y1, x2, y2) {
@@ -219,13 +213,20 @@
       };
     }
 
-    return function score(q) {
+    // Side scores are cached by key: quads built from the same lines share
+    // sides, and scoring a side is the expensive part.
+    var cache = new Map();
+    return function score(q, keys) {
       var cx = 0, cy = 0;
       q.forEach(function (p) { cx += p.x; cy += p.y; });
       var centroid = { x: cx / 4, y: cy / 4 };
       var s = [], outs = [];
       for (var i = 0; i < 4; i++) {
-        var r = sideScore(q[i], q[(i + 1) % 4], centroid);
+        var r = keys ? cache.get(keys[i]) : undefined;
+        if (!r) {
+          r = sideScore(q[i], q[(i + 1) % 4], centroid);
+          if (keys) cache.set(keys[i], r);
+        }
         s.push(r.score);
         outs.push(r.outMean);
       }
@@ -308,9 +309,12 @@
       var scorer = makeScorer(scoreEdgeD.data, lab.data, w, h);
 
       var candidates = [];
-      function addCandidate(pts, source) {
+      var seen = new Set();
+      function addCandidate(pts, source, keys) {
         if (pts.length !== 4) return;
         var q = orderCorners(pts);
+        // Side keys only apply if the corners kept their order.
+        if (keys && q[0] !== pts[0]) keys = undefined;
         var margin = 0.03 * minDim;
         for (var i = 0; i < 4; i++) {
           if (q[i].x < -margin || q[i].y < -margin || q[i].x > w + margin || q[i].y > h + margin) return;
@@ -319,10 +323,11 @@
         var area = polyArea(q);
         if (area < 0.06 * imgArea || area > 1.02 * imgArea) return;
         if (!cornerAnglesOk(q, 50, 130)) return;
-        for (var j = 0; j < candidates.length; j++) {
-          if (quadDistance(candidates[j].q, q) < 0.006 * diag) return; // duplicate
-        }
-        var s = scorer(q);
+        var cell = 0.006 * diag;
+        var key = q.map(function (p) { return Math.round(p.x / cell) + ',' + Math.round(p.y / cell); }).join(';');
+        if (seen.has(key)) return; // (near) duplicate
+        seen.add(key);
+        var s = scorer(q, keys);
         candidates.push({ q: q, area: area / imgArea, score: s.score, base: s.base, ringStrict: s.ringStrict, sides: s.sides, source: source });
       }
 
@@ -374,14 +379,18 @@
       var horiz = [], vert = [];
       clusters.forEach(function (c) {
         var deg = c.t * 180 / Math.PI;
-        if (deg > 50 && deg < 130) horiz.push(c);
-        else if (deg < 40 || deg > 140) vert.push(c);
+        // Paintings are photographed roughly upright; steeper lines are
+        // usually perspective lines painted in the picture.
+        if (deg > 65 && deg < 115) horiz.push(c);
+        else if (deg < 25 || deg > 155) vert.push(c);
       });
       horiz.sort(function (a, b) { return b.weight - a.weight; });
       vert.sort(function (a, b) { return b.weight - a.weight; });
       if (root.GALLERYSNAP_DEBUG) root.GALLERYSNAP_LINES = { horiz: horiz.map(function (c) { return [Math.round(c.t * 180 / Math.PI), Math.round(c.r), Math.round(c.weight)]; }), vert: vert.map(function (c) { return [Math.round(c.t * 180 / Math.PI), Math.round(c.r), Math.round(c.weight)]; }) };
-      horiz = horiz.slice(0, 14);
-      vert = vert.slice(0, 14);
+      horiz = horiz.slice(0, 22);
+      horiz.forEach(function (l, i) { l.id = 'h' + i; });
+      vert = vert.slice(0, 22);
+      vert.forEach(function (l, i) { l.id = 'v' + i; });
       function yAt(l, x) { return (l.r - x * Math.cos(l.t)) / Math.sin(l.t); }
       function xAt(l, y) { return (l.r - y * Math.sin(l.t)) / Math.cos(l.t); }
       for (var a = 0; a < horiz.length; a++) {
@@ -396,7 +405,12 @@
               if (xAt(right, h / 2) - xAt(left, h / 2) < 0.2 * w) continue;
               var p1 = intersect(top, left), p2 = intersect(top, right), p3 = intersect(bot, right), p4 = intersect(bot, left);
               if (!p1 || !p2 || !p3 || !p4) continue;
-              addCandidate([p1, p2, p3, p4], 'lines');
+              addCandidate([p1, p2, p3, p4], 'lines', [
+                't' + top.id + ':' + left.id + ',' + right.id,
+                'r' + right.id + ':' + top.id + ',' + bot.id,
+                'b' + bot.id + ':' + left.id + ',' + right.id,
+                'l' + left.id + ':' + top.id + ',' + bot.id,
+              ]);
             }
           }
         }

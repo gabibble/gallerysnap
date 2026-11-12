@@ -20,7 +20,7 @@ beforeAll(async () => {
 }, 60_000);
 
 async function run(file: string) {
-  const { data, info } = await sharp(path.join(__dirname, 'fixtures', file)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { data, info } = await sharp(path.join(__dirname, 'fixtures', file)).rotate().ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   return detect(cv, { data: new Uint8ClampedArray(data.buffer, data.byteOffset, data.length), width: info.width, height: info.height });
 }
 
@@ -75,5 +75,26 @@ describe('detect', () => {
   it('has low confidence when there is nothing to crop', async () => {
     const r = await run('canvas-cropped.jpg');
     expect(r.confidence).toBeLessThan(0.5);
+  }, 60_000);
+  it('finds a panel lying on a wood floor', async () => {
+    const r = await run('panel-on-wood-floor.jpg');
+    expect(r.confidence).toBeGreaterThan(0.6);
+    expectNear(r.painting.corners, [
+      [0.157, 0.209],
+      [0.886, 0.199],
+      [0.867, 0.77],
+      [0.146, 0.778],
+    ]);
+  }, 60_000);
+
+  it('finds a watercolor on a terracotta background', async () => {
+    const r = await run('watercolor-on-terracotta.jpg');
+    expect(r.confidence).toBeGreaterThan(0.6);
+    expectNear(r.painting.corners, [
+      [0.129, 0.251],
+      [0.909, 0.248],
+      [0.913, 0.639],
+      [0.122, 0.639],
+    ]);
   }, 60_000);
 });
