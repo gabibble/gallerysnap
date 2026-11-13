@@ -4,7 +4,8 @@
 // With several photos it shows the "gallery wall" instead.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { warmUp } from '@/lib/cvClient';
-import { downloadAll, downloadOne } from '@/lib/download';
+import { downloadAll, downloadEach, downloadOne, shareFiles } from '@/lib/download';
+import { saveTarget } from '@/lib/saveTarget';
 import { addTurns, displayQuad, fromDisplay, type Quad } from '@/lib/geometry';
 import { makeDisplayUrl } from '@/lib/images';
 import { GooglePhotosError, googlePhotosAvailable, loadGoogleScript, saveToGooglePhotos, signIn } from '@/lib/googlePhotos';
@@ -260,21 +261,47 @@ export default function App() {
     return list.length > 1 ? list.filter((p) => p.status === 'good') : list;
   }
 
+  /** The full-size picture if it's already made, so the share sheet can open while the tap is fresh. */
+  function cachedFull(p: Painting): Blob | null {
+    const hit = fullCache.current.get(p.id);
+    return hit && hit.key === resultKey(p) ? hit.blob : null;
+  }
+
   async function download() {
     const list = ready();
     if (!list.length) return;
+    const target = saveTarget();
+    const single = list.length === 1 && paintingsRef.current.length === 1;
     setSaveStatus({ kind: 'working', what: 'download' });
     try {
-      if (list.length === 1 && paintingsRef.current.length === 1) {
-        downloadOne(await fullResult(list[0]), list[0].name);
-      } else {
-        const files = [];
-        for (const p of list) files.push({ blob: await fullResult(p), originalName: p.name });
-        await downloadAll(files);
+      const files: { blob: Blob; originalName: string }[] = [];
+      for (const p of list) files.push({ blob: cachedFull(p) ?? (await fullResult(p)), originalName: p.name });
+
+      if (target === 'photos') {
+        // iPhone and iPad: the share sheet's "Save Image" puts them in Photos.
+        const shared = shareFiles(files);
+        if (shared) {
+          try {
+            await navigator.share({ files: shared });
+            setSaveStatus({ kind: 'downloaded' });
+          } catch (e) {
+            const name = (e as Error)?.name;
+            if (name === 'AbortError') setSaveStatus({ kind: 'idle' });
+            // Making the pictures took long enough that the tap went stale.
+            // They're made now, so a second tap opens the share sheet at once.
+            else if (name === 'NotAllowedError') setSaveStatus({ kind: 'error', message: 'Your pictures are ready. Tap the button again to save them.' });
+            else throw e;
+          }
+          return;
+        }
       }
+
+      if (single) downloadOne(files[0].blob, files[0].originalName);
+      else if (target === 'download') await downloadAll(files);
+      else await downloadEach(files);
       setSaveStatus({ kind: 'downloaded' });
     } catch {
-      setSaveStatus({ kind: 'error', message: 'Sorry, the download did not work. Please try again.' });
+      setSaveStatus({ kind: 'error', message: 'Sorry, saving did not work. Please try again.' });
     }
   }
 
@@ -304,6 +331,15 @@ export default function App() {
       setSaveStatus({ kind: 'error', message: friendly(err) });
     }
   }
+
+  // iPhone and iPad: make the full-size picture ahead of time, so tapping
+  // "Save to Photos app" can open the share sheet straight away.
+  const warmKey = view === 'save' && current && current.resultUrl ? `${current.id}|${resultKey(current)}` : null;
+  useEffect(() => {
+    if (!warmKey || saveTarget() !== 'photos') return;
+    const p = paintingsRef.current.find((x) => warmKey.startsWith(`${x.id}|`));
+    if (p) fullResult(p).catch(() => {});
+  }, [warmKey]);
 
   const step: StepName = view === 'photo' ? 'photo' : view === 'save' || view === 'saved' ? 'save' : 'straighten';
   const backFromStraighten = isBatch ? () => setView('wall') : startOver;

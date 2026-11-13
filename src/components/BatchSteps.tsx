@@ -5,6 +5,7 @@ import { displayName } from '@/lib/filenames';
 import { ALBUM_TITLE } from '@/lib/googlePhotos';
 import type { Painting } from '@/lib/types';
 import type { SaveStatus } from './SaveStep';
+import { SAVE_LABEL, SAVED_ALL_TEXT, useSaveTarget } from '@/lib/saveTarget';
 import { Button, CheckIcon, DownloadIcon, PhotoIcon, RotateLeftIcon, RotateRightIcon } from './ui';
 
 type WallProps = {
@@ -23,6 +24,7 @@ export function WallStep({ paintings, status, onFix, onTurn, redrawing, onGoogle
   const good = paintings.filter((p) => p.status === 'good').length;
   const needs = paintings.filter((p) => p.status === 'needs').length;
   const saving = status.kind === 'working';
+  const target = useSaveTarget();
   const total = paintings.length;
 
   let sub: string;
@@ -94,7 +96,7 @@ export function WallStep({ paintings, status, onFix, onTurn, redrawing, onGoogle
         </Button>
         <Button onClick={onDownload} busy={saving && status.what === 'download'} disabled={saving || redrawing || working > 0 || good === 0}>
           <DownloadIcon className="w-[26px] h-[26px] flex-none" />
-          Download all
+          {SAVE_LABEL[target].all}
         </Button>
       </div>
 
@@ -102,8 +104,8 @@ export function WallStep({ paintings, status, onFix, onTurn, redrawing, onGoogle
         {status.kind === 'idle' && needs > 0 && working === 0 && good > 0 && (
           <p className="italic text-muted">Paintings that need a look are left out until you choose their corners.</p>
         )}
-        {status.kind === 'working' && <p className="text-muted">{status.what === 'google' ? 'Saving to Google Photos…' : 'Getting your download ready…'}</p>}
-        {status.kind === 'downloaded' && <p className="font-semibold">Downloaded as gallerysnap-paintings.zip. Look in your Downloads folder.</p>}
+        {status.kind === 'working' && <p className="text-muted">{status.what === 'google' ? 'Saving to Google Photos…' : 'Getting your pictures ready…'}</p>}
+        {status.kind === 'downloaded' && <p className="font-semibold">{SAVED_ALL_TEXT[target]}</p>}
         {status.kind === 'error' && (
           <p role="alert" className="text-burgundy font-semibold">
             {status.message}

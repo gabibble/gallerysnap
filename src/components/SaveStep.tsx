@@ -6,6 +6,7 @@ import { displayName, outputFilename } from '@/lib/filenames';
 import { parseDimensions } from '@/lib/geometry';
 import { ALBUM_TITLE } from '@/lib/googlePhotos';
 import type { Painting } from '@/lib/types';
+import { SAVE_LABEL, SAVED_TEXT, useSaveTarget } from '@/lib/saveTarget';
 import { BackLink, Button, DownloadIcon, PhotoIcon } from './ui';
 
 export type SaveStatus =
@@ -47,6 +48,7 @@ export default function SaveStep({ painting, status, onGoogle, onDownload, onDim
   const [sizeText, setSizeText] = useState(painting.dimensions);
   const sizeBad = sizeText.trim() !== '' && parseDimensions(sizeText) === null;
   const working = status.kind === 'working';
+  const target = useSaveTarget();
 
   return (
     <main className="flex flex-col gap-4 px-4 sm:px-10 py-5 max-w-[1100px] mx-auto w-full">
@@ -71,13 +73,13 @@ export default function SaveStep({ painting, status, onGoogle, onDownload, onDim
           </Button>
           <Button onClick={onDownload} busy={working && status.what === 'download'} disabled={working}>
             <DownloadIcon className="w-[26px] h-[26px] flex-none" />
-            Download
+            {SAVE_LABEL[target].one}
           </Button>
         </div>
 
         <div aria-live="polite" className="text-center text-[19px] min-h-[1.5em]">
           {status.kind === 'idle' && <p className="italic text-muted text-[18px]">Google Photos saves go into an album called &ldquo;{ALBUM_TITLE}&rdquo;.</p>}
-          {status.kind === 'working' && <p className="text-muted">{status.what === 'google' ? 'Saving to Google Photos…' : 'Getting your download ready…'}</p>}
+          {status.kind === 'working' && <p className="text-muted">{status.what === 'google' ? 'Saving to Google Photos…' : 'Getting your picture ready…'}</p>}
           {status.kind === 'saved' && (
             <p className="font-semibold">
               Saved to your &ldquo;{ALBUM_TITLE}&rdquo; album.{' '}
@@ -87,9 +89,7 @@ export default function SaveStep({ painting, status, onGoogle, onDownload, onDim
             </p>
           )}
           {status.kind === 'downloaded' && (
-            <p className="font-semibold">
-              Downloaded as <span className="font-sans">{outputFilename(painting.name)}</span>. Look in your Downloads folder.
-            </p>
+            <p className="font-semibold">{SAVED_TEXT[target](outputFilename(painting.name))}</p>
           )}
           {status.kind === 'error' && (
             <p role="alert" className="text-burgundy font-semibold">

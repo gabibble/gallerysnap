@@ -28,3 +28,20 @@ export async function downloadAll(files: { blob: Blob; originalName: string }[])
   const zipped = zipSync(entries);
   saveBlob(new Blob([zipped as BlobPart], { type: 'application/zip' }), 'gallerysnap-paintings.zip');
 }
+
+/** Downloads each picture as its own file (phones: so they show up in the gallery). */
+export async function downloadEach(files: { blob: Blob; originalName: string }[]) {
+  const names = uniqueNames(files.map((f) => outputFilename(f.originalName)));
+  for (let i = 0; i < files.length; i++) {
+    saveBlob(files[i].blob, names[i]);
+    // Browsers drop downloads started all at once.
+    if (i < files.length - 1) await new Promise((r) => setTimeout(r, 400));
+  }
+}
+
+/** The share sheet's files for these pictures, or null if this browser can't share them. */
+export function shareFiles(files: { blob: Blob; originalName: string }[]): File[] | null {
+  const names = uniqueNames(files.map((f) => outputFilename(f.originalName)));
+  const list = files.map((f, i) => new File([f.blob], names[i], { type: f.blob.type || 'image/jpeg' }));
+  return navigator.canShare?.({ files: list }) ? list : null;
+}

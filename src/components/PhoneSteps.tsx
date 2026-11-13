@@ -9,10 +9,11 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'rea
 import { displayName, outputFilename } from '@/lib/filenames';
 import { isConvexQuad, orderQuad, parseDimensions, type Quad, type Turns } from '@/lib/geometry';
 import { ALBUM_TITLE } from '@/lib/googlePhotos';
+import { SAVE_LABEL, SAVED_TEXT, useSaveTarget } from '@/lib/saveTarget';
 import type { Painting } from '@/lib/types';
 import type { SaveStatus } from './SaveStep';
 import { PhotoStage, type AdjustProps, type FoundProps, type TurnProps } from './StraightenStep';
-import { Button, DownloadIcon, IconButton, PHONE_HEADER, PhotoIcon, RotateLeftIcon, RotateRightIcon, SwitchRow, WandIcon } from './ui';
+import { Button, DownloadIcon, IconButton, PHONE_HEADER, PhotoIcon, RotateLeftIcon, RotateRightIcon, SwitchRow } from './ui';
 
 const big = 'w-full !min-h-0 h-14 !text-[18px] !rounded-[14px] !px-4';
 
@@ -47,7 +48,7 @@ function Fill({ fillRef, height, children }: { fillRef: RefObject<HTMLDivElement
   );
 }
 
-/** The tidy panel under the photo: turn and enhance icons, then the frame switch when there is a frame. */
+/** The tidy panel under the photo: the turn icons, the Enhance switch, then the frame switch when there is a frame. */
 function Controls({ onTurn, turning, enhance, onEnhance, disabled, frame }: TurnProps & { disabled?: boolean; frame?: { on: boolean; onChange: (v: boolean) => void } }) {
   return (
     <div className="bg-card-on border-[1.5px] border-line rounded-[14px] flex flex-col">
@@ -59,10 +60,9 @@ function Controls({ onTurn, turning, enhance, onEnhance, disabled, frame }: Turn
         <IconButton label="Turn right" onClick={() => onTurn(1)} disabled={turning || disabled}>
           <RotateRightIcon className="w-[22px] h-[22px]" />
         </IconButton>
-        <IconButton label="Enhance colors" pressed={enhance} onClick={() => onEnhance(!enhance)} disabled={turning || disabled}>
-          <WandIcon className="w-[22px] h-[22px]" />
-        </IconButton>
       </div>
+      <div className="h-px bg-line mx-3.5" />
+      <SwitchRow className="px-3.5 py-3" title="Enhance colors" checked={enhance} onChange={onEnhance} disabled={turning || disabled} />
       {frame && (
         <>
           <div className="h-px bg-line mx-3.5" />
@@ -193,6 +193,7 @@ export function PhoneSave({ painting, status, onGoogle, onDownload, onDimensions
   const [sizeText, setSizeText] = useState(painting.dimensions);
   const sizeBad = sizeText.trim() !== '' && parseDimensions(sizeText) === null;
   const working = status.kind === 'working';
+  const target = useSaveTarget();
 
   return (
     <Screen>
@@ -209,7 +210,7 @@ export function PhoneSave({ painting, status, onGoogle, onDownload, onDimensions
         )}
       </Fill>
       <div aria-live="polite" className="text-center text-[16px] leading-snug empty:hidden">
-        {status.kind === 'working' && <p className="text-muted">{status.what === 'google' ? 'Saving to Google Photos…' : 'Getting your download ready…'}</p>}
+        {status.kind === 'working' && <p className="text-muted">{status.what === 'google' ? 'Saving to Google Photos…' : 'Getting your picture ready…'}</p>}
         {status.kind === 'saved' && (
           <p className="font-semibold">
             Saved to your &ldquo;{ALBUM_TITLE}&rdquo; album.{' '}
@@ -218,7 +219,7 @@ export function PhoneSave({ painting, status, onGoogle, onDownload, onDimensions
             </a>
           </p>
         )}
-        {status.kind === 'downloaded' && <p className="font-semibold">Saved as {outputFilename(painting.name)}.</p>}
+        {status.kind === 'downloaded' && <p className="font-semibold">{SAVED_TEXT[target](outputFilename(painting.name))}</p>}
         {status.kind === 'error' && (
           <p role="alert" className="text-burgundy font-semibold">
             {status.message}
@@ -232,7 +233,7 @@ export function PhoneSave({ painting, status, onGoogle, onDownload, onDimensions
         </Button>
         <Button onClick={onDownload} busy={working && status.what === 'download'} disabled={working} className={big}>
           <DownloadIcon className="w-[22px] h-[22px] flex-none" />
-          Download
+          {SAVE_LABEL[target].one}
         </Button>
       </div>
       {sizeOpen ? (
