@@ -23,9 +23,13 @@ export const DownloadIcon = ({ className }: IconProps) => (
   </svg>
 );
 export const WandIcon = ({ className }: IconProps) => (
-  <svg viewBox="0 0 24 24" className={className} aria-hidden {...stroke}>
-    <path d="M4 20L15 9M13 7l4 4" />
-    <path d="M18 2v3M16.5 3.5h3M21 8v2M20 9h2M9 3v2M8 4h2" />
+  <svg viewBox="0 0 24 24" className={className} aria-hidden>
+    {/* The stick, with a separate tip so it reads as a wand, and sparkles. */}
+    <path d="M3 21L13.2 10.8" fill="none" stroke="currentColor" strokeWidth={3.2} />
+    <path d="M14.8 9.2L17.2 6.8" fill="none" stroke="currentColor" strokeWidth={3.2} />
+    <path d="M19.50 0.40 L20.51 2.99 L23.10 4.00 L20.51 5.01 L19.50 7.60 L18.49 5.01 L15.90 4.00 L18.49 2.99Z" fill="currentColor" />
+    <path d="M10.50 1.60 L11.12 3.18 L12.70 3.80 L11.12 4.42 L10.50 6.00 L9.88 4.42 L8.30 3.80 L9.88 3.18Z" fill="currentColor" />
+    <path d="M20.40 10.40 L21.02 11.98 L22.60 12.60 L21.02 13.22 L20.40 14.80 L19.78 13.22 L18.20 12.60 L19.78 11.98Z" fill="currentColor" />
   </svg>
 );
 export const CornersIcon = ({ className }: IconProps) => (
@@ -51,6 +55,29 @@ export const CheckIcon = ({ className }: IconProps) => (
     <path d="M5 12.5l4.5 4.5L19 7.5" />
   </svg>
 );
+export const RotateLeftIcon = ({ className }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden {...stroke} strokeWidth={2}>
+    <path d="M4 5v5h5" />
+    <path d="M5.5 15a7.5 7.5 0 1 0 1.2-8.2L4 10" />
+  </svg>
+);
+export const RotateRightIcon = ({ className }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden {...stroke} strokeWidth={2}>
+    <path d="M20 5v5h-5" />
+    <path d="M18.5 15a7.5 7.5 0 1 1-1.2-8.2L20 10" />
+  </svg>
+);
+export const LockIcon = ({ className }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden {...stroke} strokeWidth={2}>
+    <rect x="5" y="10" width="14" height="10" rx="2" />
+    <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+  </svg>
+);
+export const ChevronLeftIcon = ({ className }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden {...stroke} strokeWidth={2.2}>
+    <path d="M15 5l-7 7 7 7" />
+  </svg>
+);
 export const FramedPictureIcon = ({ className }: IconProps) => (
   <svg viewBox="0 0 64 64" className={className} aria-hidden fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
     <rect x="6" y="10" width="52" height="44" rx="2" />
@@ -58,6 +85,25 @@ export const FramedPictureIcon = ({ className }: IconProps) => (
     <path d="M13 41l10-9 8 7 6-5 14 11" />
   </svg>
 );
+
+/** "Enhance": on/off pill with a wand, used on the finished picture. */
+export function EnhanceToggle({ on, onChange, disabled, busy }: { on: boolean; onChange: (v: boolean) => void; disabled?: boolean; busy?: boolean }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      disabled={disabled}
+      onClick={() => onChange(!on)}
+      title={on ? 'Colors enhanced. Tap to undo.' : 'Brighten and balance the colors'}
+      className={`inline-flex items-center gap-2 h-[42px] px-3.5 rounded-full border-2 font-sans font-bold text-[16px] cursor-pointer disabled:opacity-60 disabled:cursor-default transition-colors ${
+        on ? 'bg-burgundy border-burgundy text-cream' : 'bg-card-on border-burgundy text-burgundy hover:bg-soft'
+      }`}
+    >
+      {busy ? <span className="gs-spinner" aria-hidden /> : <WandIcon className="w-5 h-5 flex-none" />}
+      <span>Enhance</span>
+    </button>
+  );
+}
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'solid' | 'outline';
@@ -122,14 +168,14 @@ export function Switch({ label, checked, onChange, className = '' }: { label: Re
 
 export type StepName = 'photo' | 'straighten' | 'save';
 
-export function Header({ step, count, onHome }: { step: StepName; count?: number; onHome: () => void }) {
+export function Header({ step, count, onHome, className = '' }: { step: StepName; count?: number; onHome: () => void; className?: string }) {
   const steps: { key: StepName; label: string; Icon: (p: IconProps) => ReactNode }[] = [
     { key: 'photo', label: 'Photo', Icon: PhotoIcon },
     { key: 'straighten', label: 'Straighten', Icon: StraightenIcon },
     { key: 'save', label: 'Save', Icon: DownloadIcon },
   ];
   return (
-    <header className="flex items-center justify-between gap-4 px-4 sm:px-10 h-[60px] sm:h-[68px] border-b border-line">
+    <header className={`flex items-center justify-between gap-4 px-4 sm:px-10 h-[60px] sm:h-[68px] border-b border-line ${className}`}>
       <button type="button" onClick={onHome} className="font-serif font-semibold text-[23px] sm:text-[26px] tracking-[-0.01em] cursor-pointer" aria-label="GallerySnap, start over">
         Gallery<em className="italic text-burgundy">Snap</em>
       </button>
@@ -150,5 +196,96 @@ export function Header({ step, count, onHome }: { step: StepName; count?: number
         </ol>
       )}
     </header>
+  );
+}
+
+/** Height of PhoneHeader, for sizing phone screens to fit without scrolling. */
+export const PHONE_HEADER = 68;
+
+/**
+ * The phone header: a back arrow, the logo, an optional tool on the right,
+ * and a thin three-part progress bar instead of the step names.
+ */
+export function PhoneHeader({
+  step,
+  onHome,
+  onBack,
+  right,
+  className = '',
+}: {
+  step: StepName;
+  onHome: () => void;
+  onBack?: () => void;
+  right?: ReactNode;
+  className?: string;
+}) {
+  const at = { photo: 1, straighten: 2, save: 3 }[step];
+  const side = 'w-10 h-10 flex-none';
+  return (
+    <header className={`flex-none px-4 pt-2.5 ${className}`} style={{ height: PHONE_HEADER }}>
+      <div className="h-[54px] flex items-center justify-between gap-2">
+        {onBack ? (
+          <button type="button" onClick={onBack} aria-label="Back" className={`${side} rounded-[12px] flex items-center justify-center text-burgundy cursor-pointer`}>
+            <ChevronLeftIcon className="w-6 h-6" />
+          </button>
+        ) : null}
+        <button type="button" onClick={onHome} className="font-serif font-semibold text-[22px] tracking-[-0.01em] cursor-pointer" aria-label="GallerySnap, start over">
+          Gallery<em className="italic text-burgundy">Snap</em>
+        </button>
+        {right ?? (onBack ? <span className={side} /> : <span className="flex-1" />)}
+      </div>
+      <div className="grid grid-cols-3 gap-1.5" role="img" aria-label={`Step ${at} of 3`}>
+        {[1, 2, 3].map((i) => (
+          <i key={i} className={`h-1 rounded-sm ${i <= at ? 'bg-burgundy' : 'bg-line'}`} />
+        ))}
+      </div>
+    </header>
+  );
+}
+
+/** The on/off track used by the phone switch rows. */
+function Track({ on }: { on: boolean }) {
+  return (
+    <span aria-hidden className={`relative w-[52px] h-[32px] rounded-full flex-none transition-colors ${on ? 'bg-burgundy' : 'bg-line'}`}>
+      <span className={`absolute top-[3px] w-[26px] h-[26px] rounded-full bg-card-on shadow-[0_1px_3px_rgba(46,47,49,.25)] transition-[left] ${on ? 'left-[23px]' : 'left-[3px]'}`} />
+    </span>
+  );
+}
+
+/** A phone on/off row: optional icon tile, a title, an optional caption and a switch. */
+export function SwitchRow({ title, caption, icon, checked, onChange, className = '' }: { title: string; caption?: string; icon?: ReactNode; checked: boolean; onChange: (v: boolean) => void; className?: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`w-full flex items-center gap-3.5 text-left cursor-pointer font-sans text-ink ${className}`}
+    >
+      {icon && <span className="flex-none w-10 h-10 rounded-[12px] bg-soft text-burgundy flex items-center justify-center">{icon}</span>}
+      <span className="flex-1 min-w-0">
+        <b className="block text-[17px] leading-tight">{title}</b>
+        {caption && <span className="block text-[14px] text-muted mt-0.5 leading-snug">{caption}</span>}
+      </span>
+      <Track on={checked} />
+    </button>
+  );
+}
+
+/** A small square icon button for the phone screens. */
+export function IconButton({ label, onClick, disabled, pressed, children }: { label: string; onClick: () => void; disabled?: boolean; pressed?: boolean; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={pressed}
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-[42px] h-[42px] flex-none rounded-[12px] border-2 flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-default ${
+        pressed ? 'bg-burgundy border-burgundy text-cream' : 'border-line text-burgundy bg-card-on'
+      }`}
+    >
+      {children}
+    </button>
   );
 }

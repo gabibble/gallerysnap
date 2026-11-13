@@ -55,7 +55,7 @@ export default function SaveStep({ painting, status, onGoogle, onDownload, onDim
         <h1 className="text-[28px] sm:text-[38px] text-center">All done. Here&rsquo;s your painting.</h1>
 
         <div className="flex items-start justify-center gap-3 sm:gap-8 max-w-full">
-          <Hung src={painting.previewUrl} alt="Your photo before" label="Before" title="Your photo" size={{ width: painting.width, height: painting.height }} />
+          <Hung src={painting.displayUrl} alt="Your photo before" label="Before" title="Your photo" size={painting.turns % 2 ? { width: painting.height, height: painting.width } : { width: painting.width, height: painting.height }} />
           <span aria-hidden className="text-[32px] sm:text-[40px] text-muted self-center pb-10">
             →
           </span>
@@ -141,3 +141,4 @@ export default function SaveStep({ painting, status, onGoogle, onDownload, onDim
     </main>
   );
 }
+

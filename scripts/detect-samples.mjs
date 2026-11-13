@@ -24,7 +24,7 @@ fs.mkdirSync(outDir, { recursive: true });
 const { cv } = await loadCv();
 
 const results = {};
-for (const file of fs.readdirSync(dir).filter((f) => /\.(jpe?g|png)$/i.test(f)).sort()) {
+for (const file of fs.readdirSync(dir).filter((f) => /\.(jpe?g|png|webp)$/i.test(f)).sort()) {
   const { data, info } = await sharp(path.join(dir, file)).rotate().ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const imageData = { data: new Uint8ClampedArray(data.buffer, data.byteOffset, data.length), width: info.width, height: info.height };
   const t0 = performance.now();

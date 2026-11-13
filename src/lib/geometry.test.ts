@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { estimateAspect, orderQuad, outputSize, parseDimensions, type Quad } from './geometry';
+import { addTurns, displayQuad, estimateAspect, fromDisplay, orderQuad, outputSize, parseDimensions, rotateQuad, type Quad } from './geometry';
 import { outputFilename, uniqueNames } from './filenames';
 
 // Projects a flat rectangle (width x height, centred at the origin, tilted
@@ -133,5 +133,42 @@ describe('filenames', () => {
 
   it('makes zip names unique', () => {
     expect(uniqueNames(['a.jpg', 'a.jpg', 'b.jpg', 'a.jpg'])).toEqual(['a.jpg', 'a (2).jpg', 'b.jpg', 'a (3).jpg']);
+  });
+});
+
+describe('rotateQuad', () => {
+  const q: Quad = [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }];
+  it('puts the old bottom-left first for one turn right', () => {
+    expect(rotateQuad(q, 1)[0]).toEqual({ x: 0, y: 1 });
+    expect(rotateQuad(q, 1)[1]).toEqual({ x: 0, y: 0 });
+  });
+  it('comes back after four turns', () => {
+    expect(rotateQuad(rotateQuad(q, 2), 2)).toEqual(q);
+    expect(rotateQuad(q, 0)).toEqual(q);
+  });
+  it('wraps turn counts', () => {
+    expect(addTurns(3, 1)).toBe(0);
+    expect(addTurns(0, -1)).toBe(3);
+  });
+});
+
+describe('displayQuad', () => {
+  const q: Quad = [{ x: 0.1, y: 0.2 }, { x: 0.8, y: 0.25 }, { x: 0.75, y: 0.9 }, { x: 0.15, y: 0.85 }];
+  it('shows the old bottom-left as the top-left after one turn right', () => {
+    const d = displayQuad(q, 1);
+    expect(d[0].x).toBeCloseTo(1 - 0.85);
+    expect(d[0].y).toBeCloseTo(0.15);
+    // Still a top-left / top-right / bottom-right / bottom-left outline.
+    expect(d[0].x).toBeLessThan(d[1].x);
+    expect(d[0].y).toBeLessThan(d[3].y);
+  });
+  it('round-trips for every turn', () => {
+    for (const t of [0, 1, 2, 3] as const) {
+      const back = fromDisplay(displayQuad(q, t), t);
+      back.forEach((p, i) => {
+        expect(p.x).toBeCloseTo(q[i].x);
+        expect(p.y).toBeCloseTo(q[i].y);
+      });
+    }
   });
 });

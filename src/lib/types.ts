@@ -1,4 +1,4 @@
-import type { Quad } from './geometry';
+import type { Quad, Turns } from './geometry';
 
 export type Mode = 'auto' | 'manual';
 
@@ -24,6 +24,8 @@ export type Painting = {
   height: number;
   /** A screen-sized copy for showing on the page. */
   previewUrl: string;
+  /** previewUrl turned by `turns`: what the Straighten screens show. */
+  displayUrl: string;
   detection: Detection | null;
   /** Current corners, as fractions of width/height. */
   corners: Quad;
@@ -33,6 +35,12 @@ export type Painting = {
   status: 'working' | 'good' | 'needs';
   /** Optional real-world size the user typed, e.g. "16 x 20". */
   dimensions: string;
+  /** Quarter turns clockwise applied to the straightened picture. */
+  turns: Turns;
+  /** Gentle automatic levels and colour balance (see enhance.ts). */
+  enhance: boolean;
+  /** Turns the AI helper thinks would make the painting upright, if it said so. */
+  suggestedTurns: Turns | null;
   /** Straightened preview, for showing on the page. */
   resultUrl: string | null;
   /** Size of the full-resolution result in pixels. */

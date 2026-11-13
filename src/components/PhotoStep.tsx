@@ -4,7 +4,7 @@
 import { useRef, useState } from 'react';
 import { ACCEPTED_TYPES, isAcceptedFile } from '@/lib/images';
 import type { Mode } from '@/lib/types';
-import { Button, CameraIcon, CornersIcon, FramedPictureIcon, WandIcon } from './ui';
+import { Button, CameraIcon, CornersIcon, FramedPictureIcon, LockIcon, PHONE_HEADER, PhotoIcon, SwitchRow, WandIcon } from './ui';
 
 type Props = {
   mode: Mode;
@@ -32,8 +32,58 @@ export default function PhotoStep({ mode, onModeChange, onFiles, busy, error }: 
     { key: 'manual', title: "I'll choose the corners", text: 'You place four markers on the corners yourself.', Icon: CornersIcon },
   ];
 
+  const errorText = (error || rejected) && (error ?? 'That file is not a photo this app can open. Please choose a JPG, PNG or HEIC photo.');
+  const inputs = (
+    <>
+      <input ref={browseRef} type="file" accept={ACCEPTED_TYPES} multiple hidden onChange={(e) => { take(e.target.files); e.target.value = ''; }} />
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { take(e.target.files); e.target.value = ''; }} />
+    </>
+  );
+
   return (
-    <main className="flex flex-col items-center gap-6 sm:gap-7 px-4 py-7 sm:py-10">
+    <>
+    {inputs}
+    {/* Phones: two buttons and one small switch, all on one screen. Chosen
+        with CSS (not JavaScript) so the right layout shows from the start. */}
+    <main className="sm:hidden flex flex-col gap-6 px-5 pt-6 pb-5" style={{ minHeight: `calc(100dvh - ${PHONE_HEADER}px)` }}>
+      <h1 className="text-[28px] leading-[1.15]">Art photos, cropped and straightened in a snap.</h1>
+      {busy ? (
+        <p className="flex items-center gap-3 text-[22px] font-semibold py-6" role="status">
+          <span className="gs-spinner text-burgundy" aria-hidden /> Opening your photos…
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          <Button className="w-full !min-h-0 h-14 !text-[18px] !rounded-[14px]" onClick={() => cameraRef.current?.click()}>
+            <CameraIcon className="w-[22px] h-[22px] flex-none" />
+            Take a photo
+          </Button>
+          <Button variant="outline" className="w-full !min-h-0 h-14 !text-[18px] !rounded-[14px]" onClick={() => browseRef.current?.click()}>
+            <PhotoIcon className="w-[22px] h-[22px] flex-none" />
+            Choose photos
+          </Button>
+          <p className="text-[15px] text-muted text-center">Pick one painting or several.</p>
+        </div>
+      )}
+      {errorText && (
+        <p role="alert" className="text-[17px] text-burgundy font-semibold leading-snug">
+          {errorText}
+        </p>
+      )}
+      <SwitchRow
+        className="bg-card-on border-[1.5px] border-line rounded-[14px] p-3.5"
+        icon={<WandIcon className="w-[22px] h-[22px]" />}
+        title="Find the corners for me"
+        caption={mode === 'auto' ? 'Turn off to tap them yourself' : 'You’ll tap the four corners yourself'}
+        checked={mode === 'auto'}
+        onChange={(on) => onModeChange(on ? 'auto' : 'manual')}
+      />
+      <p className="mt-auto flex items-center justify-center gap-2 text-[14px] text-muted">
+        <LockIcon className="w-4 h-4 flex-none" />
+        Your photos stay private.
+      </p>
+    </main>
+
+    <main className="max-sm:hidden flex flex-col items-center gap-6 sm:gap-7 px-4 py-7 sm:py-10">
       <h1 className="text-[28px] sm:text-[38px] text-center max-w-[900px]">Get your art photos cropped and straightened in a snap.</h1>
 
       <div
@@ -72,13 +122,11 @@ export default function PhotoStep({ mode, onModeChange, onFiles, busy, error }: 
             <p className="italic text-muted text-[17px] sm:text-[18px] text-center">You can drag in one photo or a whole batch.</p>
           </>
         )}
-        <input ref={browseRef} type="file" accept={ACCEPTED_TYPES} multiple hidden onChange={(e) => { take(e.target.files); e.target.value = ''; }} />
-        <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { take(e.target.files); e.target.value = ''; }} />
       </div>
 
-      {(error || rejected) && (
+      {errorText && (
         <p role="alert" className="max-w-[820px] text-center text-[19px] text-burgundy font-semibold">
-          {error ?? 'That file is not a photo this app can open. Please choose a JPG, PNG or HEIC photo.'}
+          {errorText}
         </p>
       )}
 
@@ -114,5 +162,6 @@ export default function PhotoStep({ mode, onModeChange, onFiles, busy, error }: 
 
       <p className="text-[15px] text-muted text-center max-w-[640px]">Your photos stay on this device. If the app can&rsquo;t find the edges by itself, a small copy goes to an AI helper to find them. Nothing else is sent anywhere unless you save to Google Photos.</p>
     </main>
+    </>
   );
 }

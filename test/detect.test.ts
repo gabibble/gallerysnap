@@ -1,5 +1,11 @@
 // Corner detection on Chris's example photos. Expected corners were measured
 // by eye on the photos (fractions of width/height, TL TR BR BL).
+//
+// Each photo is checked twice: from the original file, and from
+// fixtures/as-seen/, which holds the exact pixels the app hands the detector
+// in a browser (shrunk to 1000px by Chrome). The two differ enough to change
+// the answer, so both must pass. Recreate as-seen/ with
+// `node scripts/capture-as-seen.mjs` after adding a photo.
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import sharp from 'sharp';
@@ -19,8 +25,9 @@ beforeAll(async () => {
   cv = mod;
 }, 60_000);
 
-async function run(file: string) {
-  const { data, info } = await sharp(path.join(__dirname, 'fixtures', file)).rotate().ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+async function load(file: string, asSeen: boolean) {
+  const input = asSeen ? path.join(__dirname, 'fixtures', 'as-seen', file.replace(/\.jpe?g$/i, '.webp')) : path.join(__dirname, 'fixtures', file);
+  const { data, info } = await sharp(input).rotate().ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   return detect(cv, { data: new Uint8ClampedArray(data.buffer, data.byteOffset, data.length), width: info.width, height: info.height });
 }
 
@@ -31,7 +38,12 @@ function expectNear(actual: P[], expected: [number, number][], tol = 0.02) {
   });
 }
 
-describe('detect', () => {
+describe.each([
+  ['original photo', false],
+  ['as the browser sees it', true],
+])('detect (%s)', (_label, asSeen) => {
+  const run = (file: string) => load(file, asSeen);
+
   it('finds a canvas lying on a wicker table', async () => {
     const r = await run('canvas-on-wicker.jpg');
     expect(r.frame).toBeNull();

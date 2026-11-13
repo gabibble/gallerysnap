@@ -2,13 +2,13 @@
 
 // Step 2: check the outline the app found, or drag the four corners by hand.
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
-import { isConvexQuad, orderQuad, type Point, type Quad } from '@/lib/geometry';
-import { BackLink, Button, MagnifierIcon, Switch } from './ui';
+import { isConvexQuad, orderQuad, type Point, type Quad, type Turns } from '@/lib/geometry';
+import { BackLink, Button, MagnifierIcon, RotateLeftIcon, RotateRightIcon, Switch, EnhanceToggle } from './ui';
 
 const ZOOM = 3;
 
 /** The photo with the gold outline on top, and optional draggable handles. */
-function PhotoStage({
+export function PhotoStage({
   src,
   alt,
   corners,
@@ -16,6 +16,7 @@ function PhotoStage({
   active,
   onActive,
   floatingLoupe,
+  imgMaxHeight,
   children,
 }: {
   src: string;
@@ -26,6 +27,8 @@ function PhotoStage({
   onActive?: (index: number, dragging: boolean) => void;
   /** Show a magnifier above the finger while dragging (phones and tablets). */
   floatingLoupe?: boolean;
+  /** Fit the photo into this many pixels of height (phones). */
+  imgMaxHeight?: number;
   children?: ReactNode;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -84,7 +87,9 @@ function PhotoStage({
   return (
     <div ref={boxRef} className="relative inline-block max-w-full select-none leading-[0]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={alt} draggable={false} className="block max-w-full w-auto h-auto max-h-[52dvh] lg:max-h-[68dvh] rounded-[3px]" />
+      <img src={src} alt={alt} draggable={false} className={`block max-w-full w-auto h-auto rounded-[3px] ${imgMaxHeight ? '' : 'max-h-[52dvh] lg:max-h-[68dvh]'}`}
+        style={imgMaxHeight ? { maxHeight: imgMaxHeight } : undefined}
+      />
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full overflow-visible pointer-events-none" aria-hidden>
         <polygon points={points} fill="none" stroke="rgba(0,0,0,.4)" strokeWidth={5} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
         <polygon points={points} fill="none" stroke="var(--color-gilt)" strokeWidth={3} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
@@ -136,7 +141,7 @@ function PhotoStage({
 }
 
 /** A round magnified view of the photo around `point`, with a red cross. */
-function Loupe({ src, point, box, size }: { src: string; point: Point; box: { width: number; height: number }; size: number }) {
+export function Loupe({ src, point, box, size }: { src: string; point: Point; box: { width: number; height: number }; size: number }) {
   const style: CSSProperties = {
     width: size,
     height: size,
@@ -159,7 +164,53 @@ function Loupe({ src, point, box, size }: { src: string; point: Point; box: { wi
   );
 }
 
-type FoundProps = {
+export type TurnProps = {
+  /** Turn the photo by quarter turns: -1 left, 1 right. */
+  onTurn: (by: number) => void;
+  /** True while a turn (or Enhance) is being drawn. */
+  turning: boolean;
+  enhance: boolean;
+  onEnhance: (on: boolean) => void;
+};
+
+/** Turn left / Turn right, and the AI's "looks sideways" hint when there is one. */
+function TurnBar({ onTurn, turning, enhance, onEnhance, suggestedTurns, disabled }: TurnProps & { suggestedTurns?: Turns | null; disabled?: boolean }) {
+  const off = turning || disabled;
+  return (
+    <div className="flex flex-col gap-2.5">
+      {suggestedTurns ? (
+        <div className="flex flex-col gap-2 bg-card border-2 border-burgundy rounded-[12px] px-3.5 py-2.5">
+          <p className="text-[17px]">{suggestedTurns === 2 ? 'This painting looks upside down.' : 'This painting looks like it is on its side.'}</p>
+          <Button size="sm" disabled={off} onClick={() => onTurn(suggestedTurns === 3 ? -1 : suggestedTurns)}>
+            Turn it the right way up
+          </Button>
+        </div>
+      ) : null}
+      <div className="flex justify-center items-center gap-3">
+        {([
+          [-1, 'Turn left', RotateLeftIcon],
+          [1, 'Turn right', RotateRightIcon],
+        ] as const).map(([by, label, Icon]) => (
+          <button
+            key={by}
+            type="button"
+            aria-label={label}
+            title={label}
+            disabled={off}
+            onClick={() => onTurn(by)}
+            className="w-12 h-12 rounded-[12px] border-2 border-burgundy bg-card-on text-burgundy flex items-center justify-center cursor-pointer hover:bg-soft disabled:opacity-60 disabled:cursor-default"
+          >
+            <Icon className="w-6 h-6" />
+          </button>
+        ))}
+        <EnhanceToggle on={enhance} onChange={onEnhance} disabled={off} />
+      </div>
+    </div>
+  );
+}
+
+export type FoundProps = TurnProps & {
+  suggestedTurns: Turns | null;
   src: string;
   name: string;
   corners: Quad;
@@ -176,7 +227,7 @@ type FoundProps = {
 };
 
 /** "Found it": the gold outline, to approve or adjust. */
-export function FoundView({ src, name, corners, unsure, hasFrame, includeFrame, onIncludeFrame, onAccept, onAdjust, onBack, backLabel, busy }: FoundProps) {
+export function FoundView({ src, name, corners, unsure, hasFrame, includeFrame, onIncludeFrame, onAccept, onAdjust, onBack, backLabel, busy, suggestedTurns, onTurn, turning, enhance, onEnhance }: FoundProps) {
   return (
     <main className="flex flex-col gap-4 px-4 sm:px-10 py-5 max-w-[1240px] mx-auto w-full">
       <BackLink onClick={onBack}>{backLabel}</BackLink>
@@ -189,8 +240,9 @@ export function FoundView({ src, name, corners, unsure, hasFrame, includeFrame, 
               ? 'This photo was a tricky one. The gold line is my best guess at the edges of your painting.'
               : 'The gold line shows the edges of your painting. Everything outside it will be trimmed away.'}
           </p>
+          <TurnBar onTurn={onTurn} turning={turning} enhance={enhance} onEnhance={onEnhance} suggestedTurns={suggestedTurns} disabled={busy} />
           {hasFrame && <Switch label="Include the frame" checked={includeFrame} onChange={onIncludeFrame} />}
-          <Button onClick={onAccept} busy={busy}>
+          <Button onClick={onAccept} busy={busy} disabled={turning}>
             Looks right
           </Button>
           <Button variant="outline" onClick={onAdjust} disabled={busy}>
@@ -202,7 +254,7 @@ export function FoundView({ src, name, corners, unsure, hasFrame, includeFrame, 
   );
 }
 
-type AdjustProps = {
+export type AdjustProps = TurnProps & {
   src: string;
   name: string;
   corners: Quad;
@@ -216,7 +268,7 @@ type AdjustProps = {
 };
 
 /** Four numbered circles to drag onto the corners, with a magnifier. */
-export function AdjustView({ src, name, corners, onChange, onDone, onBack, backLabel, notice, busy }: AdjustProps) {
+export function AdjustView({ src, name, corners, onChange, onDone, onBack, backLabel, notice, busy, onTurn, turning, enhance, onEnhance }: AdjustProps) {
   const [active, setActive] = useState(0);
   const [magnifier, setMagnifier] = useState(true);
   const [crossed, setCrossed] = useState(false);
@@ -273,13 +325,16 @@ export function AdjustView({ src, name, corners, onChange, onDone, onBack, backL
               <p className="italic text-muted text-[18px]">Put the red cross right on the corner.</p>
             </div>
           )}
-          <Switch label="Magnifier" checked={magnifier} onChange={setMagnifier} />
+          <Switch label="Magnifier" checked={magnifier} onChange={setMagnifier} className="self-stretch" />
+          <div className="self-stretch">
+            <TurnBar onTurn={onTurn} turning={turning} enhance={enhance} onEnhance={onEnhance} disabled={busy} />
+          </div>
           {crossed && (
             <p role="alert" className="text-[18px] text-center text-burgundy font-semibold">
               The circles are crossed over. Put one circle on each corner of the painting.
             </p>
           )}
-          <Button onClick={done} busy={busy} className="self-stretch">
+          <Button onClick={done} busy={busy} disabled={turning} className="self-stretch">
             Done
           </Button>
         </div>
