@@ -125,3 +125,17 @@ export function parseDimensions(text: string): number | null {
   if (!(a > 0 && b > 0)) return null;
   return a / b;
 }
+
+/** Quarter turns clockwise, 0 to 3. */
+export type Turns = 0 | 1 | 2 | 3;
+
+export const addTurns = (t: Turns, by: number): Turns => ((((t + by) % 4) + 4) % 4) as Turns;
+
+/**
+ * Re-labels the corners so the straightened picture comes out turned clockwise
+ * by `turns` quarter turns. The warp maps corner 0 to the top left, so turning
+ * right by one means the old bottom-left corner becomes the new top-left.
+ */
+export function rotateQuad(q: Quad, turns: Turns): Quad {
+  return [0, 1, 2, 3].map((i) => q[(i - turns + 4) % 4]) as Quad;
+}

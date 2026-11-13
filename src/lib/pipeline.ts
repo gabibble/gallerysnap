@@ -1,6 +1,7 @@
 // The steps a photo goes through: load, find corners, straighten.
 import { detectCorners, warp } from './cvClient';
-import { defaultQuad, isConvexQuad, orderQuad, outputSize, parseDimensions, toPixels, type Point, type Quad } from './geometry';
+import { enhance } from './enhance';
+import { defaultQuad, isConvexQuad, orderQuad, outputSize, parseDimensions, rotateQuad, toPixels, type Point, type Quad, type Turns } from './geometry';
 import { decodePhoto, getPixels, makePreviewUrl, makeSmallJpegBase64, pixelsToJpeg } from './images';
 import type { Detection, Outline, Painting } from './types';
 
@@ -26,6 +27,9 @@ export async function loadPainting(file: File): Promise<Painting> {
     includeFrame: false,
     status: 'working',
     dimensions: '',
+    turns: 0,
+    enhance: false,
+    suggestedTurns: null,
     resultUrl: null,
     resultSize: null,
   };
@@ -97,7 +101,12 @@ export function activeCorners(p: Painting): Quad {
 /** Size of the full-resolution result. */
 export function resultSizeFor(p: Painting, corners: Quad = activeCorners(p)) {
   const aspect = parseDimensions(p.dimensions) ?? undefined;
-  return outputSize(toPixels(corners, p.width, p.height), p.width, p.height, aspect);
+  return outputSize(rotateQuad(toPixels(corners, p.width, p.height), p.turns), p.width, p.height, aspect);
+}
+
+/** Everything that changes the finished picture, for caching. */
+export function resultKey(p: Painting): string {
+  return JSON.stringify([activeCorners(p), p.dimensions, p.turns, p.enhance]);
 }
 
 async function straighten(p: Painting, maxSide: number): Promise<Blob> {
@@ -109,11 +118,11 @@ async function straighten(p: Painting, maxSide: number): Promise<Blob> {
   const pixels = getPixels(p.bitmap, sourceSide);
   const out = await warp(
     pixels,
-    toPixels(corners, pixels.width, pixels.height),
+    rotateQuad(toPixels(corners, pixels.width, pixels.height), p.turns),
     Math.max(1, Math.round(full.width * scale)),
     Math.max(1, Math.round(full.height * scale)),
   );
-  return pixelsToJpeg(out, 0.95);
+  return pixelsToJpeg(p.enhance ? enhance(out) : out, 0.95);
 }
 
 /** A screen-sized straightened picture, as an object URL. */
@@ -131,4 +140,29 @@ export function disposePainting(p: Painting) {
   p.bitmap.close();
   URL.revokeObjectURL(p.previewUrl);
   if (p.resultUrl) URL.revokeObjectURL(p.resultUrl);
+}
+
+/**
+ * Asks the AI helper whether the straightened picture is the right way up.
+ * Returns the quarter turns clockwise it suggests, or null when it is upright,
+ * unsure, or the helper is switched off. Never throws.
+ */
+export async function askUprightTurns(p: Painting): Promise<Turns | null> {
+  if (!p.resultUrl) return null;
+  try {
+    const bitmap = await createImageBitmap(await (await fetch(p.resultUrl)).blob());
+    const image = await makeSmallJpegBase64(bitmap, 768);
+    bitmap.close();
+    const res = await fetch('/api/orientation', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ image }),
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { turns?: number | null };
+    const t = body.turns;
+    return t === 1 || t === 2 || t === 3 ? t : null;
+  } catch {
+    return null;
+  }
 }

@@ -51,6 +51,18 @@ export const CheckIcon = ({ className }: IconProps) => (
     <path d="M5 12.5l4.5 4.5L19 7.5" />
   </svg>
 );
+export const RotateLeftIcon = ({ className }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden {...stroke} strokeWidth={2}>
+    <path d="M4 5v5h5" />
+    <path d="M5.5 15a7.5 7.5 0 1 0 1.2-8.2L4 10" />
+  </svg>
+);
+export const RotateRightIcon = ({ className }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden {...stroke} strokeWidth={2}>
+    <path d="M20 5v5h-5" />
+    <path d="M18.5 15a7.5 7.5 0 1 1-1.2-8.2L20 10" />
+  </svg>
+);
 export const FramedPictureIcon = ({ className }: IconProps) => (
   <svg viewBox="0 0 64 64" className={className} aria-hidden fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
     <rect x="6" y="10" width="52" height="44" rx="2" />

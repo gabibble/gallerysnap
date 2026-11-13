@@ -6,7 +6,7 @@ import { displayName, outputFilename } from '@/lib/filenames';
 import { parseDimensions } from '@/lib/geometry';
 import { ALBUM_TITLE } from '@/lib/googlePhotos';
 import type { Painting } from '@/lib/types';
-import { BackLink, Button, DownloadIcon, PhotoIcon } from './ui';
+import { BackLink, Button, DownloadIcon, PhotoIcon, RotateLeftIcon, RotateRightIcon, Switch } from './ui';
 
 export type SaveStatus =
   | { kind: 'idle' }
@@ -21,6 +21,11 @@ type Props = {
   onGoogle: () => void;
   onDownload: () => void;
   onDimensions: (text: string) => void;
+  /** Turn the picture by quarter turns: -1 left, 1 right. */
+  onTurn: (by: number) => void;
+  onEnhance: (on: boolean) => void;
+  /** True while the picture is being redrawn after a turn or enhance. */
+  redrawing: boolean;
   onBack: () => void;
   onAnother: () => void;
 };
@@ -42,7 +47,7 @@ function Hung({ src, alt, label, title, size }: { src: string; alt: string; labe
   );
 }
 
-export default function SaveStep({ painting, status, onGoogle, onDownload, onDimensions, onBack, onAnother }: Props) {
+export default function SaveStep({ painting, status, onGoogle, onDownload, onDimensions, onTurn, onEnhance, redrawing, onBack, onAnother }: Props) {
   const [sizeOpen, setSizeOpen] = useState(painting.dimensions !== '');
   const [sizeText, setSizeText] = useState(painting.dimensions);
   const sizeBad = sizeText.trim() !== '' && parseDimensions(sizeText) === null;
@@ -64,12 +69,14 @@ export default function SaveStep({ painting, status, onGoogle, onDownload, onDim
           )}
         </div>
 
+        <PictureTools painting={painting} onTurn={onTurn} onEnhance={onEnhance} disabled={working || redrawing} />
+
         <div className="grid sm:grid-cols-2 gap-3 sm:gap-5 w-full max-w-[820px]">
-          <Button onClick={onGoogle} busy={working && status.what === 'google'} disabled={working}>
+          <Button onClick={onGoogle} busy={working && status.what === 'google'} disabled={working || redrawing}>
             <PhotoIcon className="w-[26px] h-[26px] flex-none" />
             Save to Google Photos
           </Button>
-          <Button onClick={onDownload} busy={working && status.what === 'download'} disabled={working}>
+          <Button onClick={onDownload} busy={working && status.what === 'download'} disabled={working || redrawing}>
             <DownloadIcon className="w-[26px] h-[26px] flex-none" />
             Download
           </Button>
@@ -139,5 +146,46 @@ export default function SaveStep({ painting, status, onGoogle, onDownload, onDim
         </div>
       </div>
     </main>
+  );
+}
+
+/** Turn left / turn right, the AI's "looks sideways" hint, and Enhance. */
+export function PictureTools({
+  painting,
+  onTurn,
+  onEnhance,
+  disabled,
+  compact = false,
+}: {
+  painting: Painting;
+  onTurn: (by: number) => void;
+  onEnhance: (on: boolean) => void;
+  disabled: boolean;
+  compact?: boolean;
+}) {
+  const hint = painting.suggestedTurns;
+  const hintBy = hint === 3 ? -1 : hint ?? 0;
+  return (
+    <div className="flex flex-col items-center gap-3 w-full">
+      {hint ? (
+        <p className="flex flex-wrap items-center justify-center gap-3 text-[18px] bg-card border-2 border-burgundy rounded-[12px] px-4 py-2.5">
+          <span>{hint === 2 ? 'This painting looks upside down.' : 'This painting looks like it is on its side.'}</span>
+          <Button size="sm" disabled={disabled} onClick={() => onTurn(hintBy)}>
+            Turn it the right way up
+          </Button>
+        </p>
+      ) : null}
+      <div className={`flex flex-wrap items-center justify-center ${compact ? 'gap-2' : 'gap-3'}`}>
+        <Button size="sm" variant="outline" disabled={disabled} onClick={() => onTurn(-1)} aria-label="Turn left">
+          <RotateLeftIcon className="w-5 h-5 flex-none" />
+          {compact ? null : 'Turn left'}
+        </Button>
+        <Button size="sm" variant="outline" disabled={disabled} onClick={() => onTurn(1)} aria-label="Turn right">
+          {compact ? null : 'Turn right'}
+          <RotateRightIcon className="w-5 h-5 flex-none" />
+        </Button>
+        <Switch label="Enhance colors" checked={painting.enhance} onChange={(v) => !disabled && onEnhance(v)} className="!text-[16px] !py-1.5" />
+      </div>
+    </div>
   );
 }

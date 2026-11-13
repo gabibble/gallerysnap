@@ -5,18 +5,20 @@ import { displayName } from '@/lib/filenames';
 import { ALBUM_TITLE } from '@/lib/googlePhotos';
 import type { Painting } from '@/lib/types';
 import type { SaveStatus } from './SaveStep';
-import { Button, CheckIcon, DownloadIcon, PhotoIcon } from './ui';
+import { Button, CheckIcon, DownloadIcon, PhotoIcon, RotateLeftIcon, RotateRightIcon } from './ui';
 
 type WallProps = {
   paintings: Painting[];
   status: SaveStatus;
   onFix: (id: string) => void;
+  onTurn: (id: string, by: number) => void;
+  redrawing: boolean;
   onGoogle: () => void;
   onDownload: () => void;
   onStartOver: () => void;
 };
 
-export function WallStep({ paintings, status, onFix, onGoogle, onDownload, onStartOver }: WallProps) {
+export function WallStep({ paintings, status, onFix, onTurn, redrawing, onGoogle, onDownload, onStartOver }: WallProps) {
   const working = paintings.filter((p) => p.status === 'working').length;
   const good = paintings.filter((p) => p.status === 'good').length;
   const needs = paintings.filter((p) => p.status === 'needs').length;
@@ -59,6 +61,24 @@ export function WallStep({ paintings, status, onFix, onGoogle, onDownload, onSta
                 </span>
               )}
               {need && <span className="font-sans font-bold text-[14px] px-2.5 py-1 rounded-full bg-need-bg text-need">Needs a look</span>}
+              {p.status === 'good' && p.suggestedTurns ? (
+                <p className="text-[15px] text-burgundy font-semibold">{p.suggestedTurns === 2 ? 'Looks upside down.' : 'Looks like it is on its side.'}</p>
+              ) : null}
+              {p.status === 'good' && (
+                <div className="flex gap-2 w-full">
+                  {p.suggestedTurns ? (
+                    <Button size="sm" className="flex-1" disabled={redrawing || saving} onClick={() => onTurn(p.id, p.suggestedTurns === 3 ? -1 : p.suggestedTurns!)}>
+                      Turn upright
+                    </Button>
+                  ) : null}
+                  <Button size="sm" variant="outline" className="flex-1" disabled={redrawing || saving} onClick={() => onTurn(p.id, -1)} aria-label={`Turn ${displayName(p.name)} left`}>
+                    <RotateLeftIcon className="w-5 h-5" />
+                  </Button>
+                  <Button size="sm" variant="outline" className="flex-1" disabled={redrawing || saving} onClick={() => onTurn(p.id, 1)} aria-label={`Turn ${displayName(p.name)} right`}>
+                    <RotateRightIcon className="w-5 h-5" />
+                  </Button>
+                </div>
+              )}
               <Button size="sm" variant={need ? 'solid' : 'outline'} className="w-full" disabled={p.status === 'working' || saving} onClick={() => onFix(p.id)}>
                 {need ? 'Choose corners' : 'Fix corners'}
               </Button>
@@ -68,11 +88,11 @@ export function WallStep({ paintings, status, onFix, onGoogle, onDownload, onSta
       </ul>
 
       <div className="grid sm:grid-cols-2 gap-3 sm:gap-5 w-full max-w-[820px]">
-        <Button onClick={onGoogle} busy={saving && status.what === 'google'} disabled={saving || working > 0 || good === 0}>
+        <Button onClick={onGoogle} busy={saving && status.what === 'google'} disabled={saving || redrawing || working > 0 || good === 0}>
           <PhotoIcon className="w-[26px] h-[26px] flex-none" />
           Save all to Google Photos
         </Button>
-        <Button onClick={onDownload} busy={saving && status.what === 'download'} disabled={saving || working > 0 || good === 0}>
+        <Button onClick={onDownload} busy={saving && status.what === 'download'} disabled={saving || redrawing || working > 0 || good === 0}>
           <DownloadIcon className="w-[26px] h-[26px] flex-none" />
           Download all
         </Button>

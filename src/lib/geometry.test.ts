@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { estimateAspect, orderQuad, outputSize, parseDimensions, type Quad } from './geometry';
+import { addTurns, estimateAspect, orderQuad, outputSize, parseDimensions, rotateQuad, type Quad } from './geometry';
 import { outputFilename, uniqueNames } from './filenames';
 
 // Projects a flat rectangle (width x height, centred at the origin, tilted
@@ -133,5 +133,21 @@ describe('filenames', () => {
 
   it('makes zip names unique', () => {
     expect(uniqueNames(['a.jpg', 'a.jpg', 'b.jpg', 'a.jpg'])).toEqual(['a.jpg', 'a (2).jpg', 'b.jpg', 'a (3).jpg']);
+  });
+});
+
+describe('rotateQuad', () => {
+  const q: Quad = [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }];
+  it('puts the old bottom-left first for one turn right', () => {
+    expect(rotateQuad(q, 1)[0]).toEqual({ x: 0, y: 1 });
+    expect(rotateQuad(q, 1)[1]).toEqual({ x: 0, y: 0 });
+  });
+  it('comes back after four turns', () => {
+    expect(rotateQuad(rotateQuad(q, 2), 2)).toEqual(q);
+    expect(rotateQuad(q, 0)).toEqual(q);
+  });
+  it('wraps turn counts', () => {
+    expect(addTurns(3, 1)).toBe(0);
+    expect(addTurns(0, -1)).toBe(3);
   });
 });

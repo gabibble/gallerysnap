@@ -5,9 +5,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { warmUp } from '@/lib/cvClient';
 import { downloadAll, downloadOne } from '@/lib/download';
-import type { Quad } from '@/lib/geometry';
+import { addTurns, type Quad } from '@/lib/geometry';
 import { GooglePhotosError, googlePhotosAvailable, loadGoogleScript, saveToGooglePhotos, signIn } from '@/lib/googlePhotos';
-import { activeCorners, disposePainting, findCorners, loadPainting, makeFullResult, makeResultPreview } from '@/lib/pipeline';
+import { activeCorners, askUprightTurns, disposePainting, findCorners, loadPainting, makeFullResult, makeResultPreview, resultKey } from '@/lib/pipeline';
 import type { Mode, Painting } from '@/lib/types';
 import { SavedStep, WallStep } from './BatchSteps';
 import PhotoStep from './PhotoStep';
@@ -32,6 +32,7 @@ export default function App() {
   const [opening, setOpening] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [redrawing, setRedrawing] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>({ kind: 'idle' });
   const [albumUrl, setAlbumUrl] = useState<string | null>(null);
@@ -43,6 +44,8 @@ export default function App() {
   const session = useRef(0);
   // Full-resolution results, kept until the corners change.
   const fullCache = useRef(new Map<string, { key: string; blob: Blob }>());
+  // Paintings we've already asked the AI helper "which way up?" about.
+  const askedUpright = useRef(new Set<string>());
 
   useEffect(() => {
     paintingsRef.current = paintings;
@@ -70,6 +73,7 @@ export default function App() {
     session.current++;
     paintingsRef.current.forEach(disposePainting);
     fullCache.current.clear();
+    askedUpright.current.clear();
     setPaintings([]);
     setCurrentId(null);
     setView('photo');
@@ -145,6 +149,7 @@ export default function App() {
           const preview = await makeResultPreview({ ...p, ...found });
           if (mySession !== session.current) return;
           patch(p.id, { ...found, ...preview });
+          checkUpright({ ...p, ...found, ...preview });
         } catch {
           patch(p.id, { ...found, status: 'needs' });
         }
@@ -165,6 +170,7 @@ export default function App() {
       const preview = await makeResultPreview(next);
       if (mySession !== session.current) return;
       patch(id, { ...changes, ...preview, status: 'good' });
+      checkUpright({ ...next, ...preview });
       setSaveStatus({ kind: 'idle' });
       setNotice(null);
       setView(paintingsRef.current.length > 1 ? 'wall' : 'save');
@@ -177,8 +183,47 @@ export default function App() {
     }
   }
 
+  /** Once per painting, in the background: is it the right way up? */
+  function checkUpright(p: Painting) {
+    if (p.turns !== 0 || askedUpright.current.has(p.id)) return;
+    askedUpright.current.add(p.id);
+    const mySession = session.current;
+    askUprightTurns(p).then((turns) => {
+      if (turns === null || mySession !== session.current) return;
+      // Only show the hint if the user hasn't turned it themselves meanwhile.
+      const now = paintingsRef.current.find((x) => x.id === p.id);
+      if (now && now.turns === 0) patch(p.id, { suggestedTurns: turns });
+    });
+  }
+
+  /** Turn or enhance the finished picture, and redraw it in place. */
+  async function redraw(id: string, changes: Partial<Painting>) {
+    const p = paintingsRef.current.find((x) => x.id === id);
+    if (!p || redrawing) return;
+    const mySession = session.current;
+    const next = { ...p, ...changes };
+    setRedrawing(true);
+    setSaveStatus({ kind: 'idle' });
+    try {
+      const preview = await makeResultPreview(next);
+      if (mySession !== session.current) return;
+      patch(id, { ...changes, ...preview });
+    } catch {
+      if (mySession === session.current) setSaveStatus({ kind: 'error', message: 'Sorry, that did not work. Please try again.' });
+    } finally {
+      if (mySession === session.current) setRedrawing(false);
+    }
+  }
+
+  function turn(id: string, by: number) {
+    const p = paintingsRef.current.find((x) => x.id === id);
+    if (!p) return;
+    askedUpright.current.add(id);
+    redraw(id, { turns: addTurns(p.turns, by), suggestedTurns: null });
+  }
+
   async function fullResult(p: Painting): Promise<Blob> {
-    const key = JSON.stringify([activeCorners(p), p.dimensions]);
+    const key = resultKey(p);
     const hit = fullCache.current.get(p.id);
     if (hit && hit.key === key) return hit.blob;
     const blob = await makeFullResult(p);
@@ -292,6 +337,9 @@ export default function App() {
           onGoogle={saveToGoogle}
           onDownload={download}
           onDimensions={(text) => finish(current.id, { dimensions: text })}
+          onTurn={(by) => turn(current.id, by)}
+          onEnhance={(on) => redraw(current.id, { enhance: on })}
+          redrawing={redrawing}
           onBack={() => {
             setSaveStatus({ kind: 'idle' });
             setView(current.detection?.painting && mode === 'auto' ? 'found' : 'adjust');
@@ -315,6 +363,8 @@ export default function App() {
             patch(id, { corners: activeCorners(p), includeFrame: false });
             setView('adjust');
           }}
+          onTurn={turn}
+          redrawing={redrawing}
           onGoogle={saveToGoogle}
           onDownload={download}
           onStartOver={startOver}
