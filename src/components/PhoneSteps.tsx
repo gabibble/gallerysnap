@@ -12,7 +12,7 @@ import { ALBUM_TITLE } from '@/lib/googlePhotos';
 import type { Painting } from '@/lib/types';
 import type { SaveStatus } from './SaveStep';
 import { PhotoStage, type AdjustProps, type FoundProps, type TurnProps } from './StraightenStep';
-import { Button, DownloadIcon, EnhanceToggle, IconButton, PHONE_HEADER, PhotoIcon, RotateLeftIcon, RotateRightIcon, Seg } from './ui';
+import { Button, DownloadIcon, IconButton, PHONE_HEADER, PhotoIcon, RotateLeftIcon, RotateRightIcon, Seg, WandIcon } from './ui';
 
 const big = 'w-full !min-h-0 h-14 !text-[18px] !rounded-[14px] !px-4';
 
@@ -47,7 +47,7 @@ function Fill({ fillRef, height, children }: { fillRef: RefObject<HTMLDivElement
   );
 }
 
-function TurnIcons({ onTurn, turning, disabled }: TurnProps & { disabled?: boolean }) {
+function TurnIcons({ onTurn, turning, enhance, onEnhance, disabled }: TurnProps & { disabled?: boolean }) {
   return (
     <div className="flex gap-2">
       <IconButton label="Turn left" onClick={() => onTurn(-1)} disabled={turning || disabled}>
@@ -55,6 +55,9 @@ function TurnIcons({ onTurn, turning, disabled }: TurnProps & { disabled?: boole
       </IconButton>
       <IconButton label="Turn right" onClick={() => onTurn(1)} disabled={turning || disabled}>
         <RotateRightIcon className="w-[22px] h-[22px]" />
+      </IconButton>
+      <IconButton label="Enhance colors" pressed={enhance} onClick={() => onEnhance(!enhance)} disabled={turning || disabled}>
+        <WandIcon className="w-[22px] h-[22px]" />
       </IconButton>
     </div>
   );
@@ -71,13 +74,13 @@ function TurnHint({ suggestedTurns, onTurn, disabled }: { suggestedTurns: Turns;
   );
 }
 
-export function PhoneFound({ src, name, corners, unsure, hasFrame, includeFrame, onIncludeFrame, onAccept, onAdjust, busy, suggestedTurns, onTurn, turning }: FoundProps) {
+export function PhoneFound({ src, name, corners, unsure, hasFrame, includeFrame, onIncludeFrame, onAccept, onAdjust, busy, suggestedTurns, onTurn, turning, enhance, onEnhance }: FoundProps) {
   const { ref: fillRef, height: fillHeight } = useFill();
   return (
     <Screen>
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-[24px]">{unsure ? 'Is this right?' : 'Found it.'}</h1>
-        <TurnIcons onTurn={onTurn} turning={turning} disabled={busy} />
+        <TurnIcons onTurn={onTurn} turning={turning} enhance={enhance} onEnhance={onEnhance} disabled={busy} />
       </div>
       {suggestedTurns ? <TurnHint suggestedTurns={suggestedTurns} onTurn={onTurn} disabled={turning || busy} /> : null}
       <Fill fillRef={fillRef} height={fillHeight}>
@@ -106,7 +109,7 @@ export function PhoneFound({ src, name, corners, unsure, hasFrame, includeFrame,
   );
 }
 
-export function PhoneAdjust({ src, name, corners, onChange, onDone, notice, busy, onTurn, turning, magnifier }: AdjustProps & { magnifier: boolean }) {
+export function PhoneAdjust({ src, name, corners, onChange, onDone, notice, busy, onTurn, turning, enhance, onEnhance, magnifier }: AdjustProps & { magnifier: boolean }) {
   const { ref: fillRef, height: fillHeight } = useFill();
   const [active, setActive] = useState(0);
   const [crossed, setCrossed] = useState(false);
@@ -124,7 +127,7 @@ export function PhoneAdjust({ src, name, corners, onChange, onDone, notice, busy
     <Screen>
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-[22px] leading-tight">Drag each corner into place.</h1>
-        <TurnIcons onTurn={onTurn} turning={turning} disabled={busy} />
+        <TurnIcons onTurn={onTurn} turning={turning} enhance={enhance} onEnhance={onEnhance} disabled={busy} />
       </div>
       {notice && (
         <p role="status" className="text-[16px] leading-snug bg-need-bg text-need rounded-[12px] px-3.5 py-2 font-sans">
@@ -179,12 +182,10 @@ type SaveProps = {
   onGoogle: () => void;
   onDownload: () => void;
   onDimensions: (text: string) => void;
-  onEnhance: (on: boolean) => void;
-  redrawing: boolean;
   onAnother: () => void;
 };
 
-export function PhoneSave({ painting, status, onGoogle, onDownload, onDimensions, onEnhance, redrawing, onAnother }: SaveProps) {
+export function PhoneSave({ painting, status, onGoogle, onDownload, onDimensions, onAnother }: SaveProps) {
   const { ref: fillRef, height: fillHeight } = useFill();
   const [sizeOpen, setSizeOpen] = useState(false);
   const [sizeText, setSizeText] = useState(painting.dimensions);
@@ -193,10 +194,7 @@ export function PhoneSave({ painting, status, onGoogle, onDownload, onDimensions
 
   return (
     <Screen>
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-[24px]">All done.</h1>
-        <EnhanceToggle on={painting.enhance} onChange={onEnhance} disabled={working || redrawing} busy={redrawing} />
-      </div>
+      <h1 className="text-[24px]">All done.</h1>
       <Fill fillRef={fillRef} height={fillHeight}>
         {painting.resultUrl && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -226,11 +224,11 @@ export function PhoneSave({ painting, status, onGoogle, onDownload, onDimensions
         )}
       </div>
       <div className="flex flex-col gap-2.5">
-        <Button onClick={onGoogle} busy={working && status.what === 'google'} disabled={working || redrawing} className={big}>
+        <Button onClick={onGoogle} busy={working && status.what === 'google'} disabled={working} className={big}>
           <PhotoIcon className="w-[22px] h-[22px] flex-none" />
           Save to Google Photos
         </Button>
-        <Button onClick={onDownload} busy={working && status.what === 'download'} disabled={working || redrawing} className={big}>
+        <Button onClick={onDownload} busy={working && status.what === 'download'} disabled={working} className={big}>
           <DownloadIcon className="w-[22px] h-[22px] flex-none" />
           Download
         </Button>

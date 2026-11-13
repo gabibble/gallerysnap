@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { warmUp } from '@/lib/cvClient';
 import { downloadAll, downloadOne } from '@/lib/download';
 import { addTurns, displayQuad, fromDisplay, type Quad } from '@/lib/geometry';
-import { makeTurnedUrl } from '@/lib/images';
+import { makeDisplayUrl } from '@/lib/images';
 import { GooglePhotosError, googlePhotosAvailable, loadGoogleScript, saveToGooglePhotos, signIn } from '@/lib/googlePhotos';
 import { activeCorners, askUprightTurns, disposePainting, findCorners, loadPainting, makeFullResult, makeResultPreview, resultKey } from '@/lib/pipeline';
 import type { Mode, Painting } from '@/lib/types';
@@ -202,21 +202,30 @@ export default function App() {
   }
 
   /**
-   * Turn a painting a quarter turn. The Straighten screens then show the photo
-   * turned; on the gallery wall the finished picture is redrawn too.
+   * Turn a painting, or switch Enhance on or off. The Straighten screens show
+   * the photo turned and enhanced; the finished picture is redrawn when one
+   * is on screen (the gallery wall, or Save).
    */
-  async function turn(id: string, by: number) {
+  async function restyle(id: string, change: { turns?: Painting['turns']; enhance?: boolean }) {
     const p = paintingsRef.current.find((x) => x.id === id);
     if (!p || redrawing) return;
     const mySession = session.current;
-    const turns = addTurns(p.turns, by);
-    askedUpright.current.add(id);
+    const turns = change.turns ?? p.turns;
+    const enhance = change.enhance ?? p.enhance;
+    if (change.turns !== undefined) askedUpright.current.add(id);
     setRedrawing(true);
     setSaveStatus({ kind: 'idle' });
+    let displayUrl = p.previewUrl;
     try {
-      const displayUrl = turns === 0 ? p.previewUrl : await makeTurnedUrl(p.previewUrl, turns);
-      const changes: Partial<Painting> = { turns, displayUrl, suggestedTurns: null };
-      if (paintingsRef.current.length > 1 && p.resultUrl) Object.assign(changes, await makeResultPreview({ ...p, ...changes }));
+      if (turns !== 0 || enhance) {
+        const q = activeCorners(p);
+        const xs = q.map((c) => c.x), ys = q.map((c) => c.y);
+        const area = { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) };
+        displayUrl = await makeDisplayUrl(p.previewUrl, turns, enhance ? area : null);
+      }
+      const changes: Partial<Painting> = { turns, enhance, displayUrl };
+      if (change.turns !== undefined) changes.suggestedTurns = null;
+      if (p.resultUrl && (paintingsRef.current.length > 1 || view === 'save')) Object.assign(changes, await makeResultPreview({ ...p, ...changes }));
       if (mySession !== session.current) {
         if (displayUrl !== p.previewUrl) URL.revokeObjectURL(displayUrl);
         return;
@@ -230,23 +239,11 @@ export default function App() {
     }
   }
 
-  /** Switch Enhance on or off, and redraw the finished picture. */
-  async function setEnhance(id: string, on: boolean) {
+  const turn = (id: string, by: number) => {
     const p = paintingsRef.current.find((x) => x.id === id);
-    if (!p || redrawing) return;
-    const mySession = session.current;
-    setRedrawing(true);
-    setSaveStatus({ kind: 'idle' });
-    try {
-      const preview = await makeResultPreview({ ...p, enhance: on });
-      if (mySession !== session.current) return;
-      patch(id, { enhance: on, ...preview });
-    } catch {
-      if (mySession === session.current) setSaveStatus({ kind: 'error', message: 'Sorry, that did not work. Please try again.' });
-    } finally {
-      if (mySession === session.current) setRedrawing(false);
-    }
-  }
+    if (p) restyle(id, { turns: addTurns(p.turns, by) });
+  };
+  const setEnhance = (id: string, on: boolean) => restyle(id, { enhance: on });
 
   async function fullResult(p: Painting): Promise<Blob> {
     const key = resultKey(p);
@@ -348,6 +345,8 @@ export default function App() {
           corners={displayQuad(activeCorners(current), current.turns)}
           suggestedTurns={current.suggestedTurns}
           onTurn={(by) => turn(current.id, by)}
+          enhance={current.enhance}
+          onEnhance={(on) => setEnhance(current.id, on)}
           turning={redrawing}
           unsure={current.status === 'needs'}
           hasFrame={!!current.detection?.frame}
@@ -374,6 +373,8 @@ export default function App() {
           onChange={(corners: Quad) => patch(current.id, { corners: fromDisplay(corners, current.turns) })}
           onDone={(corners: Quad) => finish(current.id, { corners: fromDisplay(corners, current.turns), includeFrame: false })}
           onTurn={(by) => turn(current.id, by)}
+          enhance={current.enhance}
+          onEnhance={(on) => setEnhance(current.id, on)}
           turning={redrawing}
           onBack={backFromStraighten}
           backLabel={backLabel}
@@ -391,8 +392,6 @@ export default function App() {
             onGoogle={saveToGoogle}
             onDownload={download}
             onDimensions={(text) => finish(current.id, { dimensions: text })}
-            onEnhance={(on) => setEnhance(current.id, on)}
-            redrawing={redrawing}
             onAnother={startOver}
           />
         ) : (
@@ -402,8 +401,6 @@ export default function App() {
             onGoogle={saveToGoogle}
             onDownload={download}
             onDimensions={(text) => finish(current.id, { dimensions: text })}
-            onEnhance={(on) => setEnhance(current.id, on)}
-            redrawing={redrawing}
             onBack={backFromSave}
             onAnother={startOver}
           />

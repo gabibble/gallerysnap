@@ -61,6 +61,31 @@ export function enhanceTables(image: RawImage): [Uint8Array, Uint8Array, Uint8Ar
   }) as [Uint8Array, Uint8Array, Uint8Array];
 }
 
+/** Applies lookup tables from enhanceTables to a picture, in place. */
+export function applyTables(image: RawImage, [r, g, b]: [Uint8Array, Uint8Array, Uint8Array]): RawImage {
+  const d = image.data;
+  for (let i = 0; i < d.length; i += 4) {
+    d[i] = r[d[i]];
+    d[i + 1] = g[d[i + 1]];
+    d[i + 2] = b[d[i + 2]];
+  }
+  return image;
+}
+
+/** A rectangle cut out of a picture (x, y, width, height in pixels). */
+export function cropImage(image: RawImage, x: number, y: number, w: number, h: number): RawImage {
+  x = Math.max(0, Math.floor(x));
+  y = Math.max(0, Math.floor(y));
+  w = Math.max(1, Math.min(image.width - x, Math.round(w)));
+  h = Math.max(1, Math.min(image.height - y, Math.round(h)));
+  const data = new Uint8ClampedArray(w * h * 4);
+  for (let row = 0; row < h; row++) {
+    const start = ((y + row) * image.width + x) * 4;
+    data.set(image.data.subarray(start, start + w * 4), row * w * 4);
+  }
+  return { data, width: w, height: h };
+}
+
 /** Enhances the picture in place. */
 export function enhance(image: RawImage): RawImage {
   const [r, g, b] = enhanceTables(image);

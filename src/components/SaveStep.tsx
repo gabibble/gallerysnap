@@ -6,7 +6,7 @@ import { displayName, outputFilename } from '@/lib/filenames';
 import { parseDimensions } from '@/lib/geometry';
 import { ALBUM_TITLE } from '@/lib/googlePhotos';
 import type { Painting } from '@/lib/types';
-import { BackLink, Button, EnhanceToggle, DownloadIcon, PhotoIcon } from './ui';
+import { BackLink, Button, DownloadIcon, PhotoIcon } from './ui';
 
 export type SaveStatus =
   | { kind: 'idle' }
@@ -21,9 +21,6 @@ type Props = {
   onGoogle: () => void;
   onDownload: () => void;
   onDimensions: (text: string) => void;
-  onEnhance: (on: boolean) => void;
-  /** True while the picture is being redrawn. */
-  redrawing: boolean;
   onBack: () => void;
   onAnother: () => void;
 };
@@ -45,7 +42,7 @@ function Hung({ src, alt, label, title, size }: { src: string; alt: string; labe
   );
 }
 
-export default function SaveStep({ painting, status, onGoogle, onDownload, onDimensions, onEnhance, redrawing, onBack, onAnother }: Props) {
+export default function SaveStep({ painting, status, onGoogle, onDownload, onDimensions, onBack, onAnother }: Props) {
   const [sizeOpen, setSizeOpen] = useState(painting.dimensions !== '');
   const [sizeText, setSizeText] = useState(painting.dimensions);
   const sizeBad = sizeText.trim() !== '' && parseDimensions(sizeText) === null;
@@ -67,14 +64,12 @@ export default function SaveStep({ painting, status, onGoogle, onDownload, onDim
           )}
         </div>
 
-        <EnhanceToggle on={painting.enhance} onChange={onEnhance} disabled={working || redrawing} busy={redrawing} />
-
         <div className="grid sm:grid-cols-2 gap-3 sm:gap-5 w-full max-w-[820px]">
-          <Button onClick={onGoogle} busy={working && status.what === 'google'} disabled={working || redrawing}>
+          <Button onClick={onGoogle} busy={working && status.what === 'google'} disabled={working}>
             <PhotoIcon className="w-[26px] h-[26px] flex-none" />
             Save to Google Photos
           </Button>
-          <Button onClick={onDownload} busy={working && status.what === 'download'} disabled={working || redrawing}>
+          <Button onClick={onDownload} busy={working && status.what === 'download'} disabled={working}>
             <DownloadIcon className="w-[26px] h-[26px] flex-none" />
             Download
           </Button>

@@ -23,9 +23,13 @@ export const DownloadIcon = ({ className }: IconProps) => (
   </svg>
 );
 export const WandIcon = ({ className }: IconProps) => (
-  <svg viewBox="0 0 24 24" className={className} aria-hidden {...stroke}>
-    <path d="M4 20L15 9M13 7l4 4" />
-    <path d="M18 2v3M16.5 3.5h3M21 8v2M20 9h2M9 3v2M8 4h2" />
+  <svg viewBox="0 0 24 24" className={className} aria-hidden>
+    {/* The stick, with a separate tip so it reads as a wand, and sparkles. */}
+    <path d="M3 21L13.2 10.8" fill="none" stroke="currentColor" strokeWidth={3.2} />
+    <path d="M14.8 9.2L17.2 6.8" fill="none" stroke="currentColor" strokeWidth={3.2} />
+    <path d="M19.50 0.40 L20.51 2.99 L23.10 4.00 L20.51 5.01 L19.50 7.60 L18.49 5.01 L15.90 4.00 L18.49 2.99Z" fill="currentColor" />
+    <path d="M10.50 1.60 L11.12 3.18 L12.70 3.80 L11.12 4.42 L10.50 6.00 L9.88 4.42 L8.30 3.80 L9.88 3.18Z" fill="currentColor" />
+    <path d="M20.40 10.40 L21.02 11.98 L22.60 12.60 L21.02 13.22 L20.40 14.80 L19.78 13.22 L18.20 12.60 L19.78 11.98Z" fill="currentColor" />
   </svg>
 );
 export const CornersIcon = ({ className }: IconProps) => (

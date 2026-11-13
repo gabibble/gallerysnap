@@ -3,7 +3,7 @@
 // Step 2: check the outline the app found, or drag the four corners by hand.
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 import { isConvexQuad, orderQuad, type Point, type Quad, type Turns } from '@/lib/geometry';
-import { BackLink, Button, MagnifierIcon, RotateLeftIcon, RotateRightIcon, Switch } from './ui';
+import { BackLink, Button, MagnifierIcon, RotateLeftIcon, RotateRightIcon, Switch, EnhanceToggle } from './ui';
 
 const ZOOM = 3;
 
@@ -167,12 +167,14 @@ export function Loupe({ src, point, box, size }: { src: string; point: Point; bo
 export type TurnProps = {
   /** Turn the photo by quarter turns: -1 left, 1 right. */
   onTurn: (by: number) => void;
-  /** True while a turn is being drawn. */
+  /** True while a turn (or Enhance) is being drawn. */
   turning: boolean;
+  enhance: boolean;
+  onEnhance: (on: boolean) => void;
 };
 
 /** Turn left / Turn right, and the AI's "looks sideways" hint when there is one. */
-function TurnBar({ onTurn, turning, suggestedTurns, disabled }: TurnProps & { suggestedTurns?: Turns | null; disabled?: boolean }) {
+function TurnBar({ onTurn, turning, enhance, onEnhance, suggestedTurns, disabled }: TurnProps & { suggestedTurns?: Turns | null; disabled?: boolean }) {
   const off = turning || disabled;
   return (
     <div className="flex flex-col gap-2.5">
@@ -184,7 +186,7 @@ function TurnBar({ onTurn, turning, suggestedTurns, disabled }: TurnProps & { su
           </Button>
         </div>
       ) : null}
-      <div className="flex justify-center gap-3">
+      <div className="flex justify-center items-center gap-3">
         {([
           [-1, 'Turn left', RotateLeftIcon],
           [1, 'Turn right', RotateRightIcon],
@@ -201,6 +203,7 @@ function TurnBar({ onTurn, turning, suggestedTurns, disabled }: TurnProps & { su
             <Icon className="w-6 h-6" />
           </button>
         ))}
+        <EnhanceToggle on={enhance} onChange={onEnhance} disabled={off} />
       </div>
     </div>
   );
@@ -224,7 +227,7 @@ export type FoundProps = TurnProps & {
 };
 
 /** "Found it": the gold outline, to approve or adjust. */
-export function FoundView({ src, name, corners, unsure, hasFrame, includeFrame, onIncludeFrame, onAccept, onAdjust, onBack, backLabel, busy, suggestedTurns, onTurn, turning }: FoundProps) {
+export function FoundView({ src, name, corners, unsure, hasFrame, includeFrame, onIncludeFrame, onAccept, onAdjust, onBack, backLabel, busy, suggestedTurns, onTurn, turning, enhance, onEnhance }: FoundProps) {
   return (
     <main className="flex flex-col gap-4 px-4 sm:px-10 py-5 max-w-[1240px] mx-auto w-full">
       <BackLink onClick={onBack}>{backLabel}</BackLink>
@@ -237,7 +240,7 @@ export function FoundView({ src, name, corners, unsure, hasFrame, includeFrame, 
               ? 'This photo was a tricky one. The gold line is my best guess at the edges of your painting.'
               : 'The gold line shows the edges of your painting. Everything outside it will be trimmed away.'}
           </p>
-          <TurnBar onTurn={onTurn} turning={turning} suggestedTurns={suggestedTurns} disabled={busy} />
+          <TurnBar onTurn={onTurn} turning={turning} enhance={enhance} onEnhance={onEnhance} suggestedTurns={suggestedTurns} disabled={busy} />
           {hasFrame && <Switch label="Include the frame" checked={includeFrame} onChange={onIncludeFrame} />}
           <Button onClick={onAccept} busy={busy} disabled={turning}>
             Looks right
@@ -265,7 +268,7 @@ export type AdjustProps = TurnProps & {
 };
 
 /** Four numbered circles to drag onto the corners, with a magnifier. */
-export function AdjustView({ src, name, corners, onChange, onDone, onBack, backLabel, notice, busy, onTurn, turning }: AdjustProps) {
+export function AdjustView({ src, name, corners, onChange, onDone, onBack, backLabel, notice, busy, onTurn, turning, enhance, onEnhance }: AdjustProps) {
   const [active, setActive] = useState(0);
   const [magnifier, setMagnifier] = useState(true);
   const [crossed, setCrossed] = useState(false);
@@ -324,7 +327,7 @@ export function AdjustView({ src, name, corners, onChange, onDone, onBack, backL
           )}
           <Switch label="Magnifier" checked={magnifier} onChange={setMagnifier} className="self-stretch" />
           <div className="self-stretch">
-            <TurnBar onTurn={onTurn} turning={turning} disabled={busy} />
+            <TurnBar onTurn={onTurn} turning={turning} enhance={enhance} onEnhance={onEnhance} disabled={busy} />
           </div>
           {crossed && (
             <p role="alert" className="text-[18px] text-center text-burgundy font-semibold">

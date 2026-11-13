@@ -1,4 +1,5 @@
 // Loading photos and moving pixels between files, canvases and the worker.
+import { applyTables, cropImage, enhanceTables } from './enhance';
 import type { RawImage } from './types';
 
 /** Largest photo we keep in memory, in pixels. Bigger photos are scaled down. */
@@ -103,17 +104,37 @@ export async function makeSmallJpegBase64(bitmap: ImageBitmap, maxSide = 1024): 
   return url.slice(url.indexOf(',') + 1);
 }
 
-/** A copy of a screen-sized picture turned clockwise by quarter turns, as an object URL. */
-export async function makeTurnedUrl(url: string, turns: number): Promise<string> {
+/**
+ * The screen-sized photo as the Straighten screens show it: turned clockwise
+ * by quarter turns and, if `enhanceArea` is given, enhanced. The enhancement
+ * is measured on that area (the painting's bounding box, as fractions) so it
+ * matches what Enhance does to the finished picture. Returns an object URL.
+ */
+export async function makeDisplayUrl(url: string, turns: number, enhanceArea: { x0: number; y0: number; x1: number; y1: number } | null): Promise<string> {
   const bitmap = await createImageBitmap(await (await fetch(url)).blob());
+  let source: CanvasImageSource = bitmap;
+  let flat: HTMLCanvasElement | null = null;
+  if (enhanceArea) {
+    flat = makeCanvas(bitmap.width, bitmap.height);
+    const fctx = flat.getContext('2d', { willReadFrequently: true })!;
+    fctx.drawImage(bitmap, 0, 0);
+    const img = fctx.getImageData(0, 0, flat.width, flat.height);
+    const raw = { data: img.data, width: img.width, height: img.height };
+    const { x0, y0, x1, y1 } = enhanceArea;
+    const tables = enhanceTables(cropImage(raw, x0 * raw.width, y0 * raw.height, (x1 - x0) * raw.width, (y1 - y0) * raw.height));
+    applyTables(raw, tables);
+    fctx.putImageData(img, 0, 0);
+    source = flat;
+  }
   const side = turns % 2 === 1;
   const canvas = makeCanvas(side ? bitmap.height : bitmap.width, side ? bitmap.width : bitmap.height);
   const ctx = canvas.getContext('2d')!;
   ctx.translate(canvas.width / 2, canvas.height / 2);
   ctx.rotate((turns * Math.PI) / 2);
-  ctx.drawImage(bitmap, -bitmap.width / 2, -bitmap.height / 2);
+  ctx.drawImage(source, -bitmap.width / 2, -bitmap.height / 2);
   bitmap.close();
   const blob = await canvasToBlob(canvas, 0.9);
   canvas.width = canvas.height = 0;
+  if (flat) flat.width = flat.height = 0;
   return URL.createObjectURL(blob);
 }
