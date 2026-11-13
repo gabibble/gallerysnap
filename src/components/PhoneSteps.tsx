@@ -12,7 +12,7 @@ import { ALBUM_TITLE } from '@/lib/googlePhotos';
 import type { Painting } from '@/lib/types';
 import type { SaveStatus } from './SaveStep';
 import { PhotoStage, type AdjustProps, type FoundProps, type TurnProps } from './StraightenStep';
-import { Button, DownloadIcon, IconButton, PHONE_HEADER, PhotoIcon, RotateLeftIcon, RotateRightIcon, Seg, WandIcon } from './ui';
+import { Button, DownloadIcon, IconButton, PHONE_HEADER, PhotoIcon, RotateLeftIcon, RotateRightIcon, SwitchRow, WandIcon } from './ui';
 
 const big = 'w-full !min-h-0 h-14 !text-[18px] !rounded-[14px] !px-4';
 
@@ -47,18 +47,28 @@ function Fill({ fillRef, height, children }: { fillRef: RefObject<HTMLDivElement
   );
 }
 
-function TurnIcons({ onTurn, turning, enhance, onEnhance, disabled }: TurnProps & { disabled?: boolean }) {
+/** The tidy panel under the photo: turn and enhance icons, then the frame switch when there is a frame. */
+function Controls({ onTurn, turning, enhance, onEnhance, disabled, frame }: TurnProps & { disabled?: boolean; frame?: { on: boolean; onChange: (v: boolean) => void } }) {
   return (
-    <div className="flex gap-2">
-      <IconButton label="Turn left" onClick={() => onTurn(-1)} disabled={turning || disabled}>
-        <RotateLeftIcon className="w-[22px] h-[22px]" />
-      </IconButton>
-      <IconButton label="Turn right" onClick={() => onTurn(1)} disabled={turning || disabled}>
-        <RotateRightIcon className="w-[22px] h-[22px]" />
-      </IconButton>
-      <IconButton label="Enhance colors" pressed={enhance} onClick={() => onEnhance(!enhance)} disabled={turning || disabled}>
-        <WandIcon className="w-[22px] h-[22px]" />
-      </IconButton>
+    <div className="bg-card-on border-[1.5px] border-line rounded-[14px] flex flex-col">
+      <div className="flex items-center gap-2 px-3.5 py-2">
+        <span className="flex-1 font-sans font-bold text-[17px]">Turn</span>
+        <IconButton label="Turn left" onClick={() => onTurn(-1)} disabled={turning || disabled}>
+          <RotateLeftIcon className="w-[22px] h-[22px]" />
+        </IconButton>
+        <IconButton label="Turn right" onClick={() => onTurn(1)} disabled={turning || disabled}>
+          <RotateRightIcon className="w-[22px] h-[22px]" />
+        </IconButton>
+        <IconButton label="Enhance colors" pressed={enhance} onClick={() => onEnhance(!enhance)} disabled={turning || disabled}>
+          <WandIcon className="w-[22px] h-[22px]" />
+        </IconButton>
+      </div>
+      {frame && (
+        <>
+          <div className="h-px bg-line mx-3.5" />
+          <SwitchRow className="px-3.5 py-3" title="Include the frame" checked={frame.on} onChange={frame.onChange} />
+        </>
+      )}
     </div>
   );
 }
@@ -78,25 +88,19 @@ export function PhoneFound({ src, name, corners, unsure, hasFrame, includeFrame,
   const { ref: fillRef, height: fillHeight } = useFill();
   return (
     <Screen>
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-[24px]">{unsure ? 'Is this right?' : 'Found it.'}</h1>
-        <TurnIcons onTurn={onTurn} turning={turning} enhance={enhance} onEnhance={onEnhance} disabled={busy} />
-      </div>
+      <h1 className="text-[24px]">{unsure ? 'Is this right?' : 'Found it.'}</h1>
       {suggestedTurns ? <TurnHint suggestedTurns={suggestedTurns} onTurn={onTurn} disabled={turning || busy} /> : null}
       <Fill fillRef={fillRef} height={fillHeight}>
         <PhotoStage src={src} alt={`Your photo: ${name}`} corners={corners} imgMaxHeight={fillHeight} />
       </Fill>
-      {hasFrame && (
-        <Seg
-          label="Frame"
-          value={includeFrame ? 'with' : 'without'}
-          options={[
-            { value: 'with', label: 'Keep frame' },
-            { value: 'without', label: 'Painting only' },
-          ]}
-          onChange={(v) => onIncludeFrame(v === 'with')}
-        />
-      )}
+      <Controls
+        onTurn={onTurn}
+        turning={turning}
+        enhance={enhance}
+        onEnhance={onEnhance}
+        disabled={busy}
+        frame={hasFrame ? { on: includeFrame, onChange: onIncludeFrame } : undefined}
+      />
       <div className="flex flex-col gap-1">
         <Button onClick={onAccept} busy={busy} disabled={turning} className={big}>
           Looks right
@@ -125,10 +129,7 @@ export function PhoneAdjust({ src, name, corners, onChange, onDone, notice, busy
 
   return (
     <Screen>
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-[22px] leading-tight">Drag each corner into place.</h1>
-        <TurnIcons onTurn={onTurn} turning={turning} enhance={enhance} onEnhance={onEnhance} disabled={busy} />
-      </div>
+      <h1 className="text-[22px] leading-tight">Drag each corner into place.</h1>
       {notice && (
         <p role="status" className="text-[16px] leading-snug bg-need-bg text-need rounded-[12px] px-3.5 py-2 font-sans">
           {notice}
@@ -154,6 +155,7 @@ export function PhoneAdjust({ src, name, corners, onChange, onDone, notice, busy
           The circles are crossed over. Put one on each corner.
         </p>
       )}
+      <Controls onTurn={onTurn} turning={turning} enhance={enhance} onEnhance={onEnhance} disabled={busy} />
       <Button onClick={done} busy={busy} disabled={turning} className={big}>
         Done
       </Button>

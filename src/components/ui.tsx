@@ -243,27 +243,32 @@ export function PhoneHeader({
   );
 }
 
-/** A small two-part choice, e.g. "Automatic / By hand". */
-export function Seg<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (v: T) => void }) {
+/** The on/off track used by the phone switch rows. */
+function Track({ on }: { on: boolean }) {
   return (
-    <div role="group" aria-label={label} className="grid grid-cols-2 gap-1 p-1 bg-soft rounded-[12px]">
-      {options.map((o) => {
-        const on = o.value === value;
-        return (
-          <button
-            key={o.value}
-            type="button"
-            aria-pressed={on}
-            onClick={() => onChange(o.value)}
-            className={`py-2.5 px-1.5 rounded-[9px] font-sans font-bold text-[16px] leading-tight cursor-pointer ${
-              on ? 'bg-card-on text-ink shadow-[0_1px_2px_rgba(60,40,20,.18),0_0_0_1px_var(--color-line)]' : 'text-muted'
-            }`}
-          >
-            {o.label}
-          </button>
-        );
-      })}
-    </div>
+    <span aria-hidden className={`relative w-[52px] h-[32px] rounded-full flex-none transition-colors ${on ? 'bg-burgundy' : 'bg-line'}`}>
+      <span className={`absolute top-[3px] w-[26px] h-[26px] rounded-full bg-card-on shadow-[0_1px_3px_rgba(46,47,49,.25)] transition-[left] ${on ? 'left-[23px]' : 'left-[3px]'}`} />
+    </span>
+  );
+}
+
+/** A phone on/off row: optional icon tile, a title, an optional caption and a switch. */
+export function SwitchRow({ title, caption, icon, checked, onChange, className = '' }: { title: string; caption?: string; icon?: ReactNode; checked: boolean; onChange: (v: boolean) => void; className?: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`w-full flex items-center gap-3.5 text-left cursor-pointer font-sans text-ink ${className}`}
+    >
+      {icon && <span className="flex-none w-10 h-10 rounded-[12px] bg-soft text-burgundy flex items-center justify-center">{icon}</span>}
+      <span className="flex-1 min-w-0">
+        <b className="block text-[17px] leading-tight">{title}</b>
+        {caption && <span className="block text-[14px] text-muted mt-0.5 leading-snug">{caption}</span>}
+      </span>
+      <Track on={checked} />
+    </button>
   );
 }
 

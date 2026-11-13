@@ -4,7 +4,7 @@
 import { useRef, useState } from 'react';
 import { ACCEPTED_TYPES, isAcceptedFile } from '@/lib/images';
 import type { Mode } from '@/lib/types';
-import { Button, CameraIcon, CornersIcon, FramedPictureIcon, LockIcon, PHONE_HEADER, PhotoIcon, Seg, WandIcon } from './ui';
+import { Button, CameraIcon, CornersIcon, FramedPictureIcon, LockIcon, PHONE_HEADER, PhotoIcon, SwitchRow, WandIcon } from './ui';
 
 type Props = {
   mode: Mode;
@@ -69,19 +69,14 @@ export default function PhotoStep({ mode, onModeChange, onFiles, busy, error }: 
           {errorText}
         </p>
       )}
-      <div className="flex flex-col gap-2">
-        <p className="font-sans font-bold text-[12px] tracking-[0.14em] uppercase text-muted">Corners</p>
-        <Seg
-          label="How to find the corners"
-          value={mode}
-          options={[
-            { value: 'auto', label: 'Automatic' },
-            { value: 'manual', label: 'By hand' },
-          ]}
-          onChange={onModeChange}
-        />
-        <p className="text-[15px] text-muted">{mode === 'auto' ? 'GallerySnap finds the edges for you.' : 'You place the four corners yourself.'}</p>
-      </div>
+      <SwitchRow
+        className="bg-card-on border-[1.5px] border-line rounded-[14px] p-3.5"
+        icon={<WandIcon className="w-[22px] h-[22px]" />}
+        title="Find the corners for me"
+        caption={mode === 'auto' ? 'Turn off to tap them yourself' : 'You’ll tap the four corners yourself'}
+        checked={mode === 'auto'}
+        onChange={(on) => onModeChange(on ? 'auto' : 'manual')}
+      />
       <p className="mt-auto flex items-center justify-center gap-2 text-[14px] text-muted">
         <LockIcon className="w-4 h-4 flex-none" />
         Your photos stay private.
