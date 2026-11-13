@@ -3,7 +3,7 @@
 // Step 2: check the outline the app found, or drag the four corners by hand.
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 import { isConvexQuad, orderQuad, type Point, type Quad, type Turns } from '@/lib/geometry';
-import { BackLink, Button, MagnifierIcon, RotateLeftIcon, RotateRightIcon, Switch, WandIcon } from './ui';
+import { BackLink, Button, MagnifierIcon, RotateLeftIcon, RotateRightIcon, Switch, EnhanceSwitch } from './ui';
 
 const ZOOM = 3;
 
@@ -230,18 +230,8 @@ function TurnBar({ onTurn, turning, enhance, onEnhance, suggestedTurns, disabled
             <Icon className="w-6 h-6" />
           </button>
         ))}
+        <EnhanceSwitch className="h-12 !border-burgundy" on={enhance} onChange={onEnhance} disabled={off} />
       </div>
-      <Switch
-        label={
-          <span className="flex items-center gap-2.5">
-            <WandIcon className="w-[22px] h-[22px] text-burgundy flex-none" />
-            Enhance colors
-          </span>
-        }
-        checked={enhance}
-        onChange={onEnhance}
-        disabled={off}
-      />
     </div>
   );
 }

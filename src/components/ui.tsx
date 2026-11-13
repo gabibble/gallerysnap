@@ -234,6 +234,25 @@ function Track({ on }: { on: boolean }) {
   );
 }
 
+/** Enhance: a wand and an on/off switch, sized to sit in line with the turn buttons. */
+export function EnhanceSwitch({ on, onChange, disabled, className = '' }: { on: boolean; onChange: (v: boolean) => void; disabled?: boolean; className?: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label="Enhance colors"
+      title="Enhance colors"
+      disabled={disabled}
+      onClick={() => onChange(!on)}
+      className={`inline-flex items-center gap-2 pl-2.5 pr-1.5 rounded-[12px] border-2 border-line bg-card-on text-burgundy cursor-pointer disabled:opacity-60 disabled:cursor-default ${className}`}
+    >
+      <WandIcon className="w-[22px] h-[22px] flex-none" />
+      <Track on={on} />
+    </button>
+  );
+}
+
 /** A phone on/off row: optional icon tile, a title, an optional caption and a switch. */
 export function SwitchRow({ title, caption, icon, checked, onChange, disabled, className = '' }: { title: string; caption?: string; icon?: ReactNode; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; className?: string }) {
   return (

@@ -13,7 +13,7 @@ import { SAVE_LABEL, SAVED_TEXT, useSaveTarget } from '@/lib/saveTarget';
 import type { Painting } from '@/lib/types';
 import type { SaveStatus } from './SaveStep';
 import { PhotoStage, type AdjustProps, type FoundProps, type TurnProps } from './StraightenStep';
-import { Button, DownloadIcon, IconButton, PHONE_HEADER, PhotoIcon, RotateLeftIcon, RotateRightIcon, SwitchRow } from './ui';
+import { Button, DownloadIcon, IconButton, PHONE_HEADER, PhotoIcon, RotateLeftIcon, RotateRightIcon, SwitchRow, EnhanceSwitch } from './ui';
 
 const big = 'w-full !min-h-0 h-14 !text-[18px] !rounded-[14px] !px-4';
 
@@ -48,21 +48,19 @@ function Fill({ fillRef, height, children }: { fillRef: RefObject<HTMLDivElement
   );
 }
 
-/** The tidy panel under the photo: the turn icons, the Enhance switch, then the frame switch when there is a frame. */
+/** The tidy panel under the photo: the turn icons and the Enhance switch in one row, then the frame switch when there is a frame. */
 function Controls({ onTurn, turning, enhance, onEnhance, disabled, frame }: TurnProps & { disabled?: boolean; frame?: { on: boolean; onChange: (v: boolean) => void } }) {
   return (
     <div className="bg-card-on border-[1.5px] border-line rounded-[14px] flex flex-col">
       <div className="flex items-center gap-2 px-3.5 py-2">
-        <span className="flex-1 font-sans font-bold text-[17px]">Turn</span>
         <IconButton label="Turn left" onClick={() => onTurn(-1)} disabled={turning || disabled}>
           <RotateLeftIcon className="w-[22px] h-[22px]" />
         </IconButton>
         <IconButton label="Turn right" onClick={() => onTurn(1)} disabled={turning || disabled}>
           <RotateRightIcon className="w-[22px] h-[22px]" />
         </IconButton>
+        <EnhanceSwitch className="h-[42px]" on={enhance} onChange={onEnhance} disabled={turning || disabled} />
       </div>
-      <div className="h-px bg-line mx-3.5" />
-      <SwitchRow className="px-3.5 py-3" title="Enhance colors" checked={enhance} onChange={onEnhance} disabled={turning || disabled} />
       {frame && (
         <>
           <div className="h-px bg-line mx-3.5" />
