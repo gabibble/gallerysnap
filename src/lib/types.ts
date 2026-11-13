@@ -24,6 +24,8 @@ export type Painting = {
   height: number;
   /** A screen-sized copy for showing on the page. */
   previewUrl: string;
+  /** previewUrl turned by `turns`: what the Straighten screens show. */
+  displayUrl: string;
   detection: Detection | null;
   /** Current corners, as fractions of width/height. */
   corners: Quad;

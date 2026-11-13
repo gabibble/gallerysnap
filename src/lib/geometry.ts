@@ -139,3 +139,24 @@ export const addTurns = (t: Turns, by: number): Turns => ((((t + by) % 4) + 4) %
 export function rotateQuad(q: Quad, turns: Turns): Quad {
   return [0, 1, 2, 3].map((i) => q[(i - turns + 4) % 4]) as Quad;
 }
+
+/** Where a point of the photo lands when the photo is shown turned clockwise. */
+function turnPoint(p: Point, turns: Turns): Point {
+  let { x, y } = p;
+  for (let i = 0; i < turns; i++) [x, y] = [1 - y, x];
+  return { x, y };
+}
+
+/**
+ * The corners as they appear on the photo shown turned by `turns`, with the
+ * new top-left corner first. Corners are always stored for the photo as taken.
+ */
+export function displayQuad(q: Quad, turns: Turns): Quad {
+  return rotateQuad(q.map((p) => turnPoint(p, turns)) as Quad, turns);
+}
+
+/** The inverse of displayQuad: corners on the turned photo back to the photo as taken. */
+export function fromDisplay(q: Quad, turns: Turns): Quad {
+  const back = addTurns(0, -turns);
+  return rotateQuad(q, back).map((p) => turnPoint(p, back)) as Quad;
+}

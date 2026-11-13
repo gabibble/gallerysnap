@@ -102,3 +102,18 @@ export async function makeSmallJpegBase64(bitmap: ImageBitmap, maxSide = 1024): 
   canvas.width = canvas.height = 0;
   return url.slice(url.indexOf(',') + 1);
 }
+
+/** A copy of a screen-sized picture turned clockwise by quarter turns, as an object URL. */
+export async function makeTurnedUrl(url: string, turns: number): Promise<string> {
+  const bitmap = await createImageBitmap(await (await fetch(url)).blob());
+  const side = turns % 2 === 1;
+  const canvas = makeCanvas(side ? bitmap.height : bitmap.width, side ? bitmap.width : bitmap.height);
+  const ctx = canvas.getContext('2d')!;
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate((turns * Math.PI) / 2);
+  ctx.drawImage(bitmap, -bitmap.width / 2, -bitmap.height / 2);
+  bitmap.close();
+  const blob = await canvasToBlob(canvas, 0.9);
+  canvas.width = canvas.height = 0;
+  return URL.createObjectURL(blob);
+}

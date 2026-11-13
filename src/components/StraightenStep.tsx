@@ -2,8 +2,8 @@
 
 // Step 2: check the outline the app found, or drag the four corners by hand.
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
-import { isConvexQuad, orderQuad, type Point, type Quad } from '@/lib/geometry';
-import { BackLink, Button, MagnifierIcon, Switch } from './ui';
+import { isConvexQuad, orderQuad, type Point, type Quad, type Turns } from '@/lib/geometry';
+import { BackLink, Button, MagnifierIcon, RotateLeftIcon, RotateRightIcon, Switch } from './ui';
 
 const ZOOM = 3;
 
@@ -159,7 +159,42 @@ function Loupe({ src, point, box, size }: { src: string; point: Point; box: { wi
   );
 }
 
-type FoundProps = {
+type TurnProps = {
+  /** Turn the photo by quarter turns: -1 left, 1 right. */
+  onTurn: (by: number) => void;
+  /** True while a turn is being drawn. */
+  turning: boolean;
+};
+
+/** Turn left / Turn right, and the AI's "looks sideways" hint when there is one. */
+function TurnBar({ onTurn, turning, suggestedTurns, disabled }: TurnProps & { suggestedTurns?: Turns | null; disabled?: boolean }) {
+  const off = turning || disabled;
+  return (
+    <div className="flex flex-col gap-2.5">
+      {suggestedTurns ? (
+        <div className="flex flex-col gap-2 bg-card border-2 border-burgundy rounded-[12px] px-3.5 py-2.5">
+          <p className="text-[17px]">{suggestedTurns === 2 ? 'This painting looks upside down.' : 'This painting looks like it is on its side.'}</p>
+          <Button size="sm" disabled={off} onClick={() => onTurn(suggestedTurns === 3 ? -1 : suggestedTurns)}>
+            Turn it the right way up
+          </Button>
+        </div>
+      ) : null}
+      <div className="grid grid-cols-2 gap-2.5">
+        <Button size="sm" variant="outline" disabled={off} onClick={() => onTurn(-1)}>
+          <RotateLeftIcon className="w-5 h-5 flex-none" />
+          Turn left
+        </Button>
+        <Button size="sm" variant="outline" disabled={off} onClick={() => onTurn(1)}>
+          Turn right
+          <RotateRightIcon className="w-5 h-5 flex-none" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+type FoundProps = TurnProps & {
+  suggestedTurns: Turns | null;
   src: string;
   name: string;
   corners: Quad;
@@ -176,7 +211,7 @@ type FoundProps = {
 };
 
 /** "Found it": the gold outline, to approve or adjust. */
-export function FoundView({ src, name, corners, unsure, hasFrame, includeFrame, onIncludeFrame, onAccept, onAdjust, onBack, backLabel, busy }: FoundProps) {
+export function FoundView({ src, name, corners, unsure, hasFrame, includeFrame, onIncludeFrame, onAccept, onAdjust, onBack, backLabel, busy, suggestedTurns, onTurn, turning }: FoundProps) {
   return (
     <main className="flex flex-col gap-4 px-4 sm:px-10 py-5 max-w-[1240px] mx-auto w-full">
       <BackLink onClick={onBack}>{backLabel}</BackLink>
@@ -189,8 +224,9 @@ export function FoundView({ src, name, corners, unsure, hasFrame, includeFrame, 
               ? 'This photo was a tricky one. The gold line is my best guess at the edges of your painting.'
               : 'The gold line shows the edges of your painting. Everything outside it will be trimmed away.'}
           </p>
+          <TurnBar onTurn={onTurn} turning={turning} suggestedTurns={suggestedTurns} disabled={busy} />
           {hasFrame && <Switch label="Include the frame" checked={includeFrame} onChange={onIncludeFrame} />}
-          <Button onClick={onAccept} busy={busy}>
+          <Button onClick={onAccept} busy={busy} disabled={turning}>
             Looks right
           </Button>
           <Button variant="outline" onClick={onAdjust} disabled={busy}>
@@ -202,7 +238,7 @@ export function FoundView({ src, name, corners, unsure, hasFrame, includeFrame, 
   );
 }
 
-type AdjustProps = {
+type AdjustProps = TurnProps & {
   src: string;
   name: string;
   corners: Quad;
@@ -216,7 +252,7 @@ type AdjustProps = {
 };
 
 /** Four numbered circles to drag onto the corners, with a magnifier. */
-export function AdjustView({ src, name, corners, onChange, onDone, onBack, backLabel, notice, busy }: AdjustProps) {
+export function AdjustView({ src, name, corners, onChange, onDone, onBack, backLabel, notice, busy, onTurn, turning }: AdjustProps) {
   const [active, setActive] = useState(0);
   const [magnifier, setMagnifier] = useState(true);
   const [crossed, setCrossed] = useState(false);
@@ -273,13 +309,16 @@ export function AdjustView({ src, name, corners, onChange, onDone, onBack, backL
               <p className="italic text-muted text-[18px]">Put the red cross right on the corner.</p>
             </div>
           )}
-          <Switch label="Magnifier" checked={magnifier} onChange={setMagnifier} />
+          <Switch label="Magnifier" checked={magnifier} onChange={setMagnifier} className="self-stretch" />
+          <div className="self-stretch">
+            <TurnBar onTurn={onTurn} turning={turning} disabled={busy} />
+          </div>
           {crossed && (
             <p role="alert" className="text-[18px] text-center text-burgundy font-semibold">
               The circles are crossed over. Put one circle on each corner of the painting.
             </p>
           )}
-          <Button onClick={done} busy={busy} className="self-stretch">
+          <Button onClick={done} busy={busy} disabled={turning} className="self-stretch">
             Done
           </Button>
         </div>

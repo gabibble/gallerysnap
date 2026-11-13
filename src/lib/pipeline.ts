@@ -21,6 +21,7 @@ export async function loadPainting(file: File): Promise<Painting> {
     width: bitmap.width,
     height: bitmap.height,
     previewUrl,
+    displayUrl: previewUrl,
     detection: null,
     corners: defaultQuad(),
     includeFrame: false,
@@ -137,6 +138,7 @@ export function makeFullResult(p: Painting): Promise<Blob> {
 export function disposePainting(p: Painting) {
   p.bitmap.close();
   URL.revokeObjectURL(p.previewUrl);
+  if (p.displayUrl !== p.previewUrl) URL.revokeObjectURL(p.displayUrl);
   if (p.resultUrl) URL.revokeObjectURL(p.resultUrl);
 }
 
@@ -146,9 +148,10 @@ export function disposePainting(p: Painting) {
  * unsure, or the helper is switched off. Never throws.
  */
 export async function askUprightTurns(p: Painting): Promise<Turns | null> {
-  if (!p.resultUrl) return null;
   try {
-    const bitmap = await createImageBitmap(await (await fetch(p.resultUrl)).blob());
+    // A small straightened copy, as the photo was taken (not turned).
+    const small = await straighten({ ...p, turns: 0 }, 768);
+    const bitmap = await createImageBitmap(small);
     const image = await makeSmallJpegBase64(bitmap, 768);
     bitmap.close();
     const res = await fetch('/api/orientation', {

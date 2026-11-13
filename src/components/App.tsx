@@ -5,7 +5,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { warmUp } from '@/lib/cvClient';
 import { downloadAll, downloadOne } from '@/lib/download';
-import { addTurns, type Quad } from '@/lib/geometry';
+import { addTurns, displayQuad, fromDisplay, type Quad } from '@/lib/geometry';
+import { makeTurnedUrl } from '@/lib/images';
 import { GooglePhotosError, googlePhotosAvailable, loadGoogleScript, saveToGooglePhotos, signIn } from '@/lib/googlePhotos';
 import { activeCorners, askUprightTurns, disposePainting, findCorners, loadPainting, makeFullResult, makeResultPreview, resultKey } from '@/lib/pipeline';
 import type { Mode, Painting } from '@/lib/types';
@@ -127,6 +128,7 @@ export default function App() {
       patch(p.id, found);
       if (found.detection?.painting) {
         setView('found');
+        checkUpright({ ...p, ...found });
       } else {
         setNotice("I couldn't find the edges in this photo. Please drag the circles onto the corners.");
         setView('adjust');
@@ -170,7 +172,6 @@ export default function App() {
       const preview = await makeResultPreview(next);
       if (mySession !== session.current) return;
       patch(id, { ...changes, ...preview, status: 'good' });
-      checkUpright({ ...next, ...preview });
       setSaveStatus({ kind: 'idle' });
       setNotice(null);
       setView(paintingsRef.current.length > 1 ? 'wall' : 'save');
@@ -196,30 +197,33 @@ export default function App() {
     });
   }
 
-  /** Turn the finished picture, and redraw it in place. */
-  async function redraw(id: string, changes: Partial<Painting>) {
+  /**
+   * Turn a painting a quarter turn. The Straighten screens then show the photo
+   * turned; on the gallery wall the finished picture is redrawn too.
+   */
+  async function turn(id: string, by: number) {
     const p = paintingsRef.current.find((x) => x.id === id);
     if (!p || redrawing) return;
     const mySession = session.current;
-    const next = { ...p, ...changes };
+    const turns = addTurns(p.turns, by);
+    askedUpright.current.add(id);
     setRedrawing(true);
     setSaveStatus({ kind: 'idle' });
     try {
-      const preview = await makeResultPreview(next);
-      if (mySession !== session.current) return;
-      patch(id, { ...changes, ...preview });
+      const displayUrl = turns === 0 ? p.previewUrl : await makeTurnedUrl(p.previewUrl, turns);
+      const changes: Partial<Painting> = { turns, displayUrl, suggestedTurns: null };
+      if (paintingsRef.current.length > 1 && p.resultUrl) Object.assign(changes, await makeResultPreview({ ...p, ...changes }));
+      if (mySession !== session.current) {
+        if (displayUrl !== p.previewUrl) URL.revokeObjectURL(displayUrl);
+        return;
+      }
+      patch(id, changes);
+      if (p.displayUrl !== p.previewUrl) URL.revokeObjectURL(p.displayUrl);
     } catch {
       if (mySession === session.current) setSaveStatus({ kind: 'error', message: 'Sorry, that did not work. Please try again.' });
     } finally {
       if (mySession === session.current) setRedrawing(false);
     }
-  }
-
-  function turn(id: string, by: number) {
-    const p = paintingsRef.current.find((x) => x.id === id);
-    if (!p) return;
-    askedUpright.current.add(id);
-    redraw(id, { turns: addTurns(p.turns, by), suggestedTurns: null });
   }
 
   async function fullResult(p: Painting): Promise<Blob> {
@@ -292,13 +296,16 @@ export default function App() {
 
       {view === 'photo' && <PhotoStep mode={mode} onModeChange={setMode} onFiles={addFiles} busy={opening} error={photoError} />}
 
-      {view === 'finding' && current && <FindingView src={current.previewUrl} name={current.name} />}
+      {view === 'finding' && current && <FindingView src={current.displayUrl} name={current.name} />}
 
       {view === 'found' && current && (
         <FoundView
-          src={current.previewUrl}
+          src={current.displayUrl}
           name={current.name}
-          corners={activeCorners(current)}
+          corners={displayQuad(activeCorners(current), current.turns)}
+          suggestedTurns={current.suggestedTurns}
+          onTurn={(by) => turn(current.id, by)}
+          turning={redrawing}
           unsure={current.status === 'needs'}
           hasFrame={!!current.detection?.frame}
           includeFrame={current.includeFrame}
@@ -318,11 +325,13 @@ export default function App() {
 
       {view === 'adjust' && current && (
         <AdjustView
-          src={current.previewUrl}
+          src={current.displayUrl}
           name={current.name}
-          corners={current.corners}
-          onChange={(corners: Quad) => patch(current.id, { corners })}
-          onDone={(corners: Quad) => finish(current.id, { corners, includeFrame: false })}
+          corners={displayQuad(current.corners, current.turns)}
+          onChange={(corners: Quad) => patch(current.id, { corners: fromDisplay(corners, current.turns) })}
+          onDone={(corners: Quad) => finish(current.id, { corners: fromDisplay(corners, current.turns), includeFrame: false })}
+          onTurn={(by) => turn(current.id, by)}
+          turning={redrawing}
           onBack={backFromStraighten}
           backLabel={backLabel}
           notice={notice}
@@ -337,8 +346,6 @@ export default function App() {
           onGoogle={saveToGoogle}
           onDownload={download}
           onDimensions={(text) => finish(current.id, { dimensions: text })}
-          onTurn={(by) => turn(current.id, by)}
-          redrawing={redrawing}
           onBack={() => {
             setSaveStatus({ kind: 'idle' });
             setView(current.detection?.painting && mode === 'auto' ? 'found' : 'adjust');
