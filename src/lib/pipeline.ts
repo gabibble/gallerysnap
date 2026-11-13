@@ -1,5 +1,6 @@
 // The steps a photo goes through: load, find corners, straighten.
 import { detectCorners, warp } from './cvClient';
+import { enhance } from './enhance';
 import { defaultQuad, isConvexQuad, orderQuad, outputSize, parseDimensions, rotateQuad, toPixels, type Point, type Quad, type Turns } from './geometry';
 import { decodePhoto, getPixels, makePreviewUrl, makeSmallJpegBase64, pixelsToJpeg } from './images';
 import type { Detection, Outline, Painting } from './types';
@@ -28,6 +29,7 @@ export async function loadPainting(file: File): Promise<Painting> {
     status: 'working',
     dimensions: '',
     turns: 0,
+    enhance: false,
     suggestedTurns: null,
     resultUrl: null,
     resultSize: null,
@@ -105,7 +107,7 @@ export function resultSizeFor(p: Painting, corners: Quad = activeCorners(p)) {
 
 /** Everything that changes the finished picture, for caching. */
 export function resultKey(p: Painting): string {
-  return JSON.stringify([activeCorners(p), p.dimensions, p.turns]);
+  return JSON.stringify([activeCorners(p), p.dimensions, p.turns, p.enhance]);
 }
 
 async function straighten(p: Painting, maxSide: number): Promise<Blob> {
@@ -121,7 +123,7 @@ async function straighten(p: Painting, maxSide: number): Promise<Blob> {
     Math.max(1, Math.round(full.width * scale)),
     Math.max(1, Math.round(full.height * scale)),
   );
-  return pixelsToJpeg(out, 0.95);
+  return pixelsToJpeg(p.enhance ? enhance(out) : out, 0.95);
 }
 
 /** A screen-sized straightened picture, as an object URL. */

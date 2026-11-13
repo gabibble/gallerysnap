@@ -82,6 +82,25 @@ export const FramedPictureIcon = ({ className }: IconProps) => (
   </svg>
 );
 
+/** "Enhance": on/off pill with a wand, used on the finished picture. */
+export function EnhanceToggle({ on, onChange, disabled, busy }: { on: boolean; onChange: (v: boolean) => void; disabled?: boolean; busy?: boolean }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      disabled={disabled}
+      onClick={() => onChange(!on)}
+      title={on ? 'Colors enhanced. Tap to undo.' : 'Brighten and balance the colors'}
+      className={`inline-flex items-center gap-2 h-[42px] px-3.5 rounded-full border-2 font-sans font-bold text-[16px] cursor-pointer disabled:opacity-60 disabled:cursor-default transition-colors ${
+        on ? 'bg-burgundy border-burgundy text-cream' : 'bg-card-on border-burgundy text-burgundy hover:bg-soft'
+      }`}
+    >
+      {busy ? <span className="gs-spinner" aria-hidden /> : <WandIcon className="w-5 h-5 flex-none" />}
+      <span>Enhance</span>
+    </button>
+  );
+}
+
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'solid' | 'outline';
   size?: 'lg' | 'md' | 'sm';

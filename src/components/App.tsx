@@ -230,6 +230,24 @@ export default function App() {
     }
   }
 
+  /** Switch Enhance on or off, and redraw the finished picture. */
+  async function setEnhance(id: string, on: boolean) {
+    const p = paintingsRef.current.find((x) => x.id === id);
+    if (!p || redrawing) return;
+    const mySession = session.current;
+    setRedrawing(true);
+    setSaveStatus({ kind: 'idle' });
+    try {
+      const preview = await makeResultPreview({ ...p, enhance: on });
+      if (mySession !== session.current) return;
+      patch(id, { enhance: on, ...preview });
+    } catch {
+      if (mySession === session.current) setSaveStatus({ kind: 'error', message: 'Sorry, that did not work. Please try again.' });
+    } finally {
+      if (mySession === session.current) setRedrawing(false);
+    }
+  }
+
   async function fullResult(p: Painting): Promise<Blob> {
     const key = resultKey(p);
     const hit = fullCache.current.get(p.id);
@@ -373,6 +391,8 @@ export default function App() {
             onGoogle={saveToGoogle}
             onDownload={download}
             onDimensions={(text) => finish(current.id, { dimensions: text })}
+            onEnhance={(on) => setEnhance(current.id, on)}
+            redrawing={redrawing}
             onAnother={startOver}
           />
         ) : (
@@ -382,6 +402,8 @@ export default function App() {
             onGoogle={saveToGoogle}
             onDownload={download}
             onDimensions={(text) => finish(current.id, { dimensions: text })}
+            onEnhance={(on) => setEnhance(current.id, on)}
+            redrawing={redrawing}
             onBack={backFromSave}
             onAnother={startOver}
           />

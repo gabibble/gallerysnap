@@ -12,7 +12,7 @@ import { ALBUM_TITLE } from '@/lib/googlePhotos';
 import type { Painting } from '@/lib/types';
 import type { SaveStatus } from './SaveStep';
 import { PhotoStage, type AdjustProps, type FoundProps, type TurnProps } from './StraightenStep';
-import { Button, DownloadIcon, IconButton, PHONE_HEADER, PhotoIcon, RotateLeftIcon, RotateRightIcon, Seg } from './ui';
+import { Button, DownloadIcon, EnhanceToggle, IconButton, PHONE_HEADER, PhotoIcon, RotateLeftIcon, RotateRightIcon, Seg } from './ui';
 
 const big = 'w-full !min-h-0 h-14 !text-[18px] !rounded-[14px] !px-4';
 
@@ -179,10 +179,12 @@ type SaveProps = {
   onGoogle: () => void;
   onDownload: () => void;
   onDimensions: (text: string) => void;
+  onEnhance: (on: boolean) => void;
+  redrawing: boolean;
   onAnother: () => void;
 };
 
-export function PhoneSave({ painting, status, onGoogle, onDownload, onDimensions, onAnother }: SaveProps) {
+export function PhoneSave({ painting, status, onGoogle, onDownload, onDimensions, onEnhance, redrawing, onAnother }: SaveProps) {
   const { ref: fillRef, height: fillHeight } = useFill();
   const [sizeOpen, setSizeOpen] = useState(false);
   const [sizeText, setSizeText] = useState(painting.dimensions);
@@ -191,7 +193,10 @@ export function PhoneSave({ painting, status, onGoogle, onDownload, onDimensions
 
   return (
     <Screen>
-      <h1 className="text-[24px]">All done.</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-[24px]">All done.</h1>
+        <EnhanceToggle on={painting.enhance} onChange={onEnhance} disabled={working || redrawing} busy={redrawing} />
+      </div>
       <Fill fillRef={fillRef} height={fillHeight}>
         {painting.resultUrl && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -221,11 +226,11 @@ export function PhoneSave({ painting, status, onGoogle, onDownload, onDimensions
         )}
       </div>
       <div className="flex flex-col gap-2.5">
-        <Button onClick={onGoogle} busy={working && status.what === 'google'} disabled={working} className={big}>
+        <Button onClick={onGoogle} busy={working && status.what === 'google'} disabled={working || redrawing} className={big}>
           <PhotoIcon className="w-[22px] h-[22px] flex-none" />
           Save to Google Photos
         </Button>
-        <Button onClick={onDownload} busy={working && status.what === 'download'} disabled={working} className={big}>
+        <Button onClick={onDownload} busy={working && status.what === 'download'} disabled={working || redrawing} className={big}>
           <DownloadIcon className="w-[22px] h-[22px] flex-none" />
           Download
         </Button>
