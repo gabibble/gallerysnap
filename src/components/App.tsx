@@ -333,7 +333,7 @@ export default function App() {
   }
 
   // iPhone and iPad: make the full-size picture ahead of time, so tapping
-  // "Save to Photos app" can open the share sheet straight away.
+  // "Save" can open the share sheet straight away.
   const warmKey = view === 'save' && current && current.resultUrl ? `${current.id}|${resultKey(current)}` : null;
   useEffect(() => {
     if (!warmKey || saveTarget() !== 'photos') return;
