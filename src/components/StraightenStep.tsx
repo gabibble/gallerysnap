@@ -8,7 +8,7 @@ import { BackLink, Button, MagnifierIcon, RotateLeftIcon, RotateRightIcon, Switc
 const ZOOM = 3;
 
 /** The photo with the gold outline on top, and optional draggable handles. */
-function PhotoStage({
+export function PhotoStage({
   src,
   alt,
   corners,
@@ -16,6 +16,7 @@ function PhotoStage({
   active,
   onActive,
   floatingLoupe,
+  imgMaxHeight,
   children,
 }: {
   src: string;
@@ -26,6 +27,8 @@ function PhotoStage({
   onActive?: (index: number, dragging: boolean) => void;
   /** Show a magnifier above the finger while dragging (phones and tablets). */
   floatingLoupe?: boolean;
+  /** Fit the photo into this many pixels of height (phones). */
+  imgMaxHeight?: number;
   children?: ReactNode;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -84,7 +87,9 @@ function PhotoStage({
   return (
     <div ref={boxRef} className="relative inline-block max-w-full select-none leading-[0]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={alt} draggable={false} className="block max-w-full w-auto h-auto max-h-[52dvh] lg:max-h-[68dvh] rounded-[3px]" />
+      <img src={src} alt={alt} draggable={false} className={`block max-w-full w-auto h-auto rounded-[3px] ${imgMaxHeight ? '' : 'max-h-[52dvh] lg:max-h-[68dvh]'}`}
+        style={imgMaxHeight ? { maxHeight: imgMaxHeight } : undefined}
+      />
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full overflow-visible pointer-events-none" aria-hidden>
         <polygon points={points} fill="none" stroke="rgba(0,0,0,.4)" strokeWidth={5} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
         <polygon points={points} fill="none" stroke="var(--color-gilt)" strokeWidth={3} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
@@ -136,7 +141,7 @@ function PhotoStage({
 }
 
 /** A round magnified view of the photo around `point`, with a red cross. */
-function Loupe({ src, point, box, size }: { src: string; point: Point; box: { width: number; height: number }; size: number }) {
+export function Loupe({ src, point, box, size }: { src: string; point: Point; box: { width: number; height: number }; size: number }) {
   const style: CSSProperties = {
     width: size,
     height: size,
@@ -159,7 +164,7 @@ function Loupe({ src, point, box, size }: { src: string; point: Point; box: { wi
   );
 }
 
-type TurnProps = {
+export type TurnProps = {
   /** Turn the photo by quarter turns: -1 left, 1 right. */
   onTurn: (by: number) => void;
   /** True while a turn is being drawn. */
@@ -193,7 +198,7 @@ function TurnBar({ onTurn, turning, suggestedTurns, disabled }: TurnProps & { su
   );
 }
 
-type FoundProps = TurnProps & {
+export type FoundProps = TurnProps & {
   suggestedTurns: Turns | null;
   src: string;
   name: string;
@@ -238,7 +243,7 @@ export function FoundView({ src, name, corners, unsure, hasFrame, includeFrame, 
   );
 }
 
-type AdjustProps = TurnProps & {
+export type AdjustProps = TurnProps & {
   src: string;
   name: string;
   corners: Quad;

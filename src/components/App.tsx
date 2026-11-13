@@ -13,8 +13,10 @@ import type { Mode, Painting } from '@/lib/types';
 import { SavedStep, WallStep } from './BatchSteps';
 import PhotoStep from './PhotoStep';
 import SaveStep, { type SaveStatus } from './SaveStep';
+import { PhoneAdjust, PhoneFinding, PhoneFound, PhoneSave } from './PhoneSteps';
 import { AdjustView, FindingView, FoundView } from './StraightenStep';
-import { Header, type StepName } from './ui';
+import { Header, IconButton, MagnifierIcon, PhoneHeader, type StepName } from './ui';
+import { usePhone } from '@/lib/usePhone';
 
 type View = 'photo' | 'finding' | 'found' | 'adjust' | 'save' | 'wall' | 'saved';
 
@@ -34,6 +36,8 @@ export default function App() {
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [redrawing, setRedrawing] = useState(false);
+  const [magnifier, setMagnifier] = useState(true);
+  const phone = usePhone();
   const [notice, setNotice] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>({ kind: 'idle' });
   const [albumUrl, setAlbumUrl] = useState<string | null>(null);
@@ -289,17 +293,38 @@ export default function App() {
   const step: StepName = view === 'photo' ? 'photo' : view === 'save' || view === 'saved' ? 'save' : 'straighten';
   const backFromStraighten = isBatch ? () => setView('wall') : startOver;
   const backLabel = isBatch ? 'Back to all paintings' : 'Back to photo';
+  const backFromSave = () => {
+    setSaveStatus({ kind: 'idle' });
+    setView(current?.detection?.painting && mode === 'auto' ? 'found' : 'adjust');
+  };
+  const phoneBack = view === 'found' || view === 'adjust' ? backFromStraighten : view === 'save' ? backFromSave : undefined;
+
+  const Found = phone ? PhoneFound : FoundView;
+  const Adjust = phone ? PhoneAdjust : AdjustView;
 
   return (
     <div className="min-h-dvh flex flex-col">
-      <Header step={step} count={paintings.length} onHome={startOver} />
+      <Header step={step} count={paintings.length} onHome={startOver} className="max-sm:hidden" />
+      <PhoneHeader
+        step={step}
+        onHome={startOver}
+        onBack={phoneBack}
+        className="sm:hidden"
+        right={
+          view === 'adjust' ? (
+            <IconButton label="Magnifier" pressed={magnifier} onClick={() => setMagnifier(!magnifier)}>
+              <MagnifierIcon className="w-[22px] h-[22px]" />
+            </IconButton>
+          ) : undefined
+        }
+      />
 
       {view === 'photo' && <PhotoStep mode={mode} onModeChange={setMode} onFiles={addFiles} busy={opening} error={photoError} />}
 
-      {view === 'finding' && current && <FindingView src={current.displayUrl} name={current.name} />}
+      {view === 'finding' && current && (phone ? <PhoneFinding src={current.displayUrl} name={current.name} /> : <FindingView src={current.displayUrl} name={current.name} />)}
 
       {view === 'found' && current && (
-        <FoundView
+        <Found
           src={current.displayUrl}
           name={current.name}
           corners={displayQuad(activeCorners(current), current.turns)}
@@ -324,7 +349,7 @@ export default function App() {
       )}
 
       {view === 'adjust' && current && (
-        <AdjustView
+        <Adjust
           src={current.displayUrl}
           name={current.name}
           corners={displayQuad(current.corners, current.turns)}
@@ -336,23 +361,31 @@ export default function App() {
           backLabel={backLabel}
           notice={notice}
           busy={busy}
+          magnifier={magnifier}
         />
       )}
 
-      {view === 'save' && current && (
-        <SaveStep
-          painting={current}
-          status={saveStatus}
-          onGoogle={saveToGoogle}
-          onDownload={download}
-          onDimensions={(text) => finish(current.id, { dimensions: text })}
-          onBack={() => {
-            setSaveStatus({ kind: 'idle' });
-            setView(current.detection?.painting && mode === 'auto' ? 'found' : 'adjust');
-          }}
-          onAnother={startOver}
-        />
-      )}
+      {view === 'save' && current &&
+        (phone ? (
+          <PhoneSave
+            painting={current}
+            status={saveStatus}
+            onGoogle={saveToGoogle}
+            onDownload={download}
+            onDimensions={(text) => finish(current.id, { dimensions: text })}
+            onAnother={startOver}
+          />
+        ) : (
+          <SaveStep
+            painting={current}
+            status={saveStatus}
+            onGoogle={saveToGoogle}
+            onDownload={download}
+            onDimensions={(text) => finish(current.id, { dimensions: text })}
+            onBack={backFromSave}
+            onAnother={startOver}
+          />
+        ))}
 
       {view === 'wall' && (
         <WallStep
