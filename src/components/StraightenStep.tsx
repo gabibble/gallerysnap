@@ -184,15 +184,23 @@ function TurnBar({ onTurn, turning, suggestedTurns, disabled }: TurnProps & { su
           </Button>
         </div>
       ) : null}
-      <div className="grid grid-cols-2 gap-2.5">
-        <Button size="sm" variant="outline" disabled={off} onClick={() => onTurn(-1)}>
-          <RotateLeftIcon className="w-5 h-5 flex-none" />
-          Turn left
-        </Button>
-        <Button size="sm" variant="outline" disabled={off} onClick={() => onTurn(1)}>
-          Turn right
-          <RotateRightIcon className="w-5 h-5 flex-none" />
-        </Button>
+      <div className="flex justify-center gap-3">
+        {([
+          [-1, 'Turn left', RotateLeftIcon],
+          [1, 'Turn right', RotateRightIcon],
+        ] as const).map(([by, label, Icon]) => (
+          <button
+            key={by}
+            type="button"
+            aria-label={label}
+            title={label}
+            disabled={off}
+            onClick={() => onTurn(by)}
+            className="w-12 h-12 rounded-[12px] border-2 border-burgundy bg-card-on text-burgundy flex items-center justify-center cursor-pointer hover:bg-soft disabled:opacity-60 disabled:cursor-default"
+          >
+            <Icon className="w-6 h-6" />
+          </button>
+        ))}
       </div>
     </div>
   );
