@@ -6,10 +6,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod';
+import { readGuardedImage } from '@/lib/aiGuard';
 
 export const maxDuration = 60;
 
-const MAX_BASE64_LENGTH = 1_500_000; // ~1.1 MB image
 const MODEL = process.env.GALLERYSNAP_AI_MODEL || 'claude-opus-5-5';
 
 const Point = z.object({ x: z.number(), y: z.number() });
@@ -27,52 +27,11 @@ Find the four corners of the artwork itself: the painted surface (canvas, panel 
 
 Give each corner as fractions of the image: x from 0 (left edge) to 1 (right edge), y from 0 (top edge) to 1 (bottom edge). Be as precise as you can. If the artwork fills the whole photo, use the photo's corners. If you can't see a rectangular artwork, set found to false.`;
 
-// A small per-visitor limit so a stray script can't run up the bill. It lives
-// in memory, so it is per server instance: a speed bump, not a wall.
-const WINDOW_MS = 10 * 60 * 1000;
-const MAX_PER_WINDOW = 40;
-const hits = new Map<string, number[]>();
-function allowed(key: string): boolean {
-  const now = Date.now();
-  const recent = (hits.get(key) ?? []).filter((t) => now - t < WINDOW_MS);
-  if (recent.length >= MAX_PER_WINDOW) {
-    hits.set(key, recent);
-    return false;
-  }
-  recent.push(now);
-  hits.set(key, recent);
-  if (hits.size > 5000) hits.clear();
-  return true;
-}
-
 const clamp = (v: number) => Math.max(0, Math.min(1, v));
 
 export async function POST(request: Request) {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    // The app works without the AI helper; it just asks the user more often.
-    return Response.json({ corners: null, reason: 'not-configured' });
-  }
-
-  // Only our own pages may call this.
-  const origin = request.headers.get('origin');
-  const host = request.headers.get('host');
-  if (origin && host && new URL(origin).host !== host) {
-    return Response.json({ error: 'forbidden' }, { status: 403 });
-  }
-  const visitor = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  if (!allowed(visitor)) {
-    return Response.json({ corners: null, reason: 'rate-limited' }, { status: 429 });
-  }
-
-  let image: unknown;
-  try {
-    ({ image } = (await request.json()) as { image?: unknown });
-  } catch {
-    return Response.json({ error: 'bad-request' }, { status: 400 });
-  }
-  if (typeof image !== 'string' || image.length === 0 || image.length > MAX_BASE64_LENGTH || !/^[A-Za-z0-9+/=]+$/.test(image)) {
-    return Response.json({ error: 'bad-image' }, { status: 400 });
-  }
+  const image = await readGuardedImage(request, { corners: null });
+  if (image instanceof Response) return image;
 
   const client = new Anthropic();
   try {

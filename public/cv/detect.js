@@ -300,9 +300,29 @@
         edgeMaps.push(e);
       });
 
-      // Scoring edge map: union of gentle + smoothed edges, dilated by ~2px.
+      // Colour edges. Some paintings are about as bright as what they lie on
+      // (blue sky next to pale wood, an orange wall on terracotta), so their
+      // edge barely shows in grey. Lab's a (green-red) and b (blue-yellow)
+      // channels show it clearly. Smoothed the same way as g2b, so texture in
+      // the background doesn't light up.
+      var labPlanes = track(new cv.MatVector());
+      cv.split(lab, labPlanes);
+      var colorEdge = track(cv.Mat.zeros(h, w, cv.CV_8U));
+      [1, 2].forEach(function (ch) {
+        var plane = labPlanes.get(ch);
+        var m = new cv.Mat(), mb = new cv.Mat(), e = new cv.Mat();
+        cv.medianBlur(plane, m, k2 | 1);
+        cv.bilateralFilter(m, mb, 9, 30, 9);
+        cv.Canny(mb, e, 8, 24);
+        cv.bitwise_or(colorEdge, e, colorEdge);
+        plane.delete(); m.delete(); mb.delete(); e.delete();
+      });
+      edgeMaps.push(colorEdge);
+
+      // Scoring edge map: union of gentle, smoothed and colour edges, dilated by ~2px.
       var scoreEdge = track(new cv.Mat());
       cv.bitwise_or(edgeMaps[0], edgeMaps[1], scoreEdge);
+      cv.bitwise_or(scoreEdge, colorEdge, scoreEdge);
       var kern = track(cv.Mat.ones(3, 3, cv.CV_8U));
       var scoreEdgeD = track(new cv.Mat());
       cv.dilate(scoreEdge, scoreEdgeD, kern);
@@ -387,9 +407,18 @@
       horiz.sort(function (a, b) { return b.weight - a.weight; });
       vert.sort(function (a, b) { return b.weight - a.weight; });
       if (root.GALLERYSNAP_DEBUG) root.GALLERYSNAP_LINES = { horiz: horiz.map(function (c) { return [Math.round(c.t * 180 / Math.PI), Math.round(c.r), Math.round(c.weight)]; }), vert: vert.map(function (c) { return [Math.round(c.t * 180 / Math.PI), Math.round(c.r), Math.round(c.weight)]; }) };
-      horiz = horiz.slice(0, 22);
+      // Keep the strongest lines in each direction. Wood grain, wicker and
+      // brush strokes make many lines in one direction, so when one direction
+      // has few lines we can afford to keep more of the other: the work grows
+      // with (pairs of horizontal lines) x (pairs of vertical lines).
+      var BUDGET = 70000;
+      function pairs(n) { return n * (n - 1) / 2; }
+      var nh = Math.min(horiz.length, 22), nv = Math.min(vert.length, 22);
+      while (nv < Math.min(vert.length, 60) && pairs(nh) * pairs(nv + 1) <= BUDGET) nv++;
+      while (nh < Math.min(horiz.length, 60) && pairs(nh + 1) * pairs(nv) <= BUDGET) nh++;
+      horiz = horiz.slice(0, nh);
       horiz.forEach(function (l, i) { l.id = 'h' + i; });
-      vert = vert.slice(0, 22);
+      vert = vert.slice(0, nv);
       vert.forEach(function (l, i) { l.id = 'v' + i; });
       function yAt(l, x) { return (l.r - x * Math.cos(l.t)) / Math.sin(l.t); }
       function xAt(l, y) { return (l.r - y * Math.sin(l.t)) / Math.cos(l.t); }
@@ -573,7 +602,47 @@
     var outer = strong.reduce(function (m, c) {
       return c.score + 0.3 * Math.sqrt(c.area) > m.score + 0.3 * Math.sqrt(m.area) ? c : m;
     });
+    // A line painted inside the picture (a shoreline, a tree trunk) can cut
+    // the painting into a strip that shares two or three edges with it and
+    // scores well. If a clearly bigger, still strong quad contains this one
+    // and shares edges with it, it is the painting and this is part of it.
+    var tol = 0.02 * minDim;
+    for (var guard = 0; guard < 4; guard++) {
+      var cur = outer;
+      var containers = candidates.filter(function (c) {
+        return c !== cur && c.area >= 1.3 * cur.area && c.score >= Math.max(GOOD, 0.8 * cur.score) &&
+          containsWithin(c.q, cur.q, tol) && sharedSides(cur.q, c.q, tol) >= 2;
+      });
+      if (!containers.length) break;
+      outer = containers.reduce(function (m, c) {
+        return c.score + 0.3 * Math.sqrt(c.area) > m.score + 0.3 * Math.sqrt(m.area) ? c : m;
+      });
+    }
     return { painting: outer, frame: null, confidence: Math.min(outer.score, 1) };
+  }
+
+  function containsWithin(outerQ, innerQ, tol) {
+    for (var i = 0; i < 4; i++) {
+      var p = innerQ[i];
+      if (pointInQuad(p, outerQ)) continue;
+      var near = false;
+      for (var j = 0; j < 4; j++) if (distPointToSeg(p, outerQ[j], outerQ[(j + 1) % 4]) < tol) near = true;
+      if (!near) return false;
+    }
+    return true;
+  }
+
+  // How many of the inner quad's sides lie along one of the outer quad's sides.
+  function sharedSides(innerQ, outerQ, tol) {
+    var n = 0;
+    for (var i = 0; i < 4; i++) {
+      var a = innerQ[i], b = innerQ[(i + 1) % 4];
+      for (var j = 0; j < 4; j++) {
+        var c = outerQ[j], d = outerQ[(j + 1) % 4];
+        if (distPointToSeg(a, c, d) < tol && distPointToSeg(b, c, d) < tol) { n++; break; }
+      }
+    }
+    return n;
   }
 
   function roughlyConcentric(inner, outer) {
