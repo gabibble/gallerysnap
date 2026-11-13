@@ -3,9 +3,36 @@
 // Step 2: check the outline the app found, or drag the four corners by hand.
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 import { isConvexQuad, orderQuad, type Point, type Quad, type Turns } from '@/lib/geometry';
-import { BackLink, Button, MagnifierIcon, RotateLeftIcon, RotateRightIcon, Switch, EnhanceToggle } from './ui';
+import { BackLink, Button, MagnifierIcon, RotateLeftIcon, RotateRightIcon, Switch, EnhanceSwitch } from './ui';
 
 const ZOOM = 3;
+
+/**
+ * A fixed square the photo sits in (computers and tablets), so the buttons
+ * beside it stay put whatever the shape of the photo. Hands the photo the
+ * height it may use, once measured.
+ */
+function Square({ children }: { children: (fit: number | undefined) => ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setSize(el.clientHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const PAD = 16;
+  return (
+    <div
+      ref={ref}
+      className="w-[min(100%,60dvh,600px)] lg:w-[min(100%,72dvh,660px)] aspect-square flex-none flex items-center justify-center bg-soft rounded-[16px]"
+      style={{ padding: PAD }}
+    >
+      {children(size > 0 ? size - 2 * PAD : undefined)}
+    </div>
+  );
+}
 
 /** The photo with the gold outline on top, and optional draggable handles. */
 export function PhotoStage({
@@ -203,7 +230,7 @@ function TurnBar({ onTurn, turning, enhance, onEnhance, suggestedTurns, disabled
             <Icon className="w-6 h-6" />
           </button>
         ))}
-        <EnhanceToggle on={enhance} onChange={onEnhance} disabled={off} />
+        <EnhanceSwitch className="h-12 !border-burgundy" on={enhance} onChange={onEnhance} disabled={off} />
       </div>
     </div>
   );
@@ -231,9 +258,9 @@ export function FoundView({ src, name, corners, unsure, hasFrame, includeFrame, 
   return (
     <main className="flex flex-col gap-4 px-4 sm:px-10 py-5 max-w-[1240px] mx-auto w-full">
       <BackLink onClick={onBack}>{backLabel}</BackLink>
-      <div className="flex flex-col lg:flex-row gap-5 lg:gap-10 items-center lg:items-center justify-center">
-        <PhotoStage src={src} alt={`Your photo: ${name}`} corners={corners} />
-        <div className="flex flex-col gap-4 w-full max-w-[360px] lg:w-[340px] flex-none">
+      <div className="flex flex-col lg:flex-row gap-5 lg:gap-10 items-center lg:items-start justify-center">
+        <Square>{(fit) => <PhotoStage src={src} alt={`Your photo: ${name}`} corners={corners} imgMaxHeight={fit} />}</Square>
+        <div className="flex flex-col gap-4 w-full max-w-[360px] lg:w-[340px] flex-none lg:pt-6">
           <h1 className="text-[30px] sm:text-[38px]">{unsure ? 'Is this right?' : 'Found it.'}</h1>
           <p className="text-[19px] sm:text-[22px]">
             {unsure
@@ -297,8 +324,11 @@ export function AdjustView({ src, name, corners, onChange, onDone, onBack, backL
       <BackLink onClick={onBack}>{backLabel}</BackLink>
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-10 items-center justify-center">
         <h1 className="text-[22px] sm:text-[26px] text-center lg:hidden">Drag each numbered circle onto a corner of the painting.</h1>
+        <Square>
+          {(fit) => (
         <div ref={measureRef} className="max-w-full">
           <PhotoStage
+            imgMaxHeight={fit}
             src={src}
             alt={`Your photo: ${name}`}
             corners={corners}
@@ -312,6 +342,8 @@ export function AdjustView({ src, name, corners, onChange, onDone, onBack, backL
             }}
           />
         </div>
+          )}
+        </Square>
         <div className="flex flex-col items-center gap-3.5 w-full max-w-[360px] lg:w-[340px] flex-none">
           <h1 className="text-[26px] text-center hidden lg:block">Drag each numbered circle onto a corner of the painting.</h1>
           {notice && (
@@ -350,8 +382,12 @@ export function FindingView({ src, name }: { src: string; name: string }) {
       <h1 className="flex items-center gap-3 text-[28px] sm:text-[34px]" role="status">
         <span className="gs-spinner text-burgundy" aria-hidden /> Finding the corners…
       </h1>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={`Your photo: ${name}`} className="max-w-full max-h-[60dvh] rounded-[3px] opacity-80" />
+      <Square>
+        {(fit) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={src} alt={`Your photo: ${name}`} className="max-w-full max-h-full rounded-[3px] opacity-80" style={fit ? { maxHeight: fit } : undefined} />
+        )}
+      </Square>
     </main>
   );
 }

@@ -86,25 +86,6 @@ export const FramedPictureIcon = ({ className }: IconProps) => (
   </svg>
 );
 
-/** "Enhance": on/off pill with a wand, used on the finished picture. */
-export function EnhanceToggle({ on, onChange, disabled, busy }: { on: boolean; onChange: (v: boolean) => void; disabled?: boolean; busy?: boolean }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={on}
-      disabled={disabled}
-      onClick={() => onChange(!on)}
-      title={on ? 'Colors enhanced. Tap to undo.' : 'Brighten and balance the colors'}
-      className={`inline-flex items-center gap-2 h-[42px] px-3.5 rounded-full border-2 font-sans font-bold text-[16px] cursor-pointer disabled:opacity-60 disabled:cursor-default transition-colors ${
-        on ? 'bg-burgundy border-burgundy text-cream' : 'bg-card-on border-burgundy text-burgundy hover:bg-soft'
-      }`}
-    >
-      {busy ? <span className="gs-spinner" aria-hidden /> : <WandIcon className="w-5 h-5 flex-none" />}
-      <span>Enhance</span>
-    </button>
-  );
-}
-
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'solid' | 'outline';
   size?: 'lg' | 'md' | 'sm';
@@ -149,14 +130,15 @@ export function BackLink({ onClick, children }: { onClick: () => void; children:
   );
 }
 
-export function Switch({ label, checked, onChange, className = '' }: { label: ReactNode; checked: boolean; onChange: (v: boolean) => void; className?: string }) {
+export function Switch({ label, checked, onChange, disabled, className = '' }: { label: ReactNode; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; className?: string }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`flex items-center justify-between gap-4 cursor-pointer font-sans font-bold text-[18px] text-ink px-4 py-2.5 border-2 border-line rounded-[12px] bg-card ${className}`}
+      className={`flex items-center justify-between gap-4 cursor-pointer disabled:opacity-60 disabled:cursor-default font-sans font-bold text-[18px] text-ink px-4 py-2.5 border-2 border-line rounded-[12px] bg-card ${className}`}
     >
       <span>{label}</span>
       <span className={`relative w-[52px] h-[30px] rounded-full flex-none transition-colors ${checked ? 'bg-burgundy' : 'bg-[#bdb3a3]'}`}>
@@ -252,15 +234,35 @@ function Track({ on }: { on: boolean }) {
   );
 }
 
+/** Enhance: a wand and an on/off switch, sized to sit in line with the turn buttons. */
+export function EnhanceSwitch({ on, onChange, disabled, className = '' }: { on: boolean; onChange: (v: boolean) => void; disabled?: boolean; className?: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label="Enhance colors"
+      title="Enhance colors"
+      disabled={disabled}
+      onClick={() => onChange(!on)}
+      className={`inline-flex items-center gap-2 pl-2.5 pr-1.5 rounded-[12px] border-2 border-line bg-card-on text-burgundy cursor-pointer disabled:opacity-60 disabled:cursor-default ${className}`}
+    >
+      <WandIcon className="w-[22px] h-[22px] flex-none" />
+      <Track on={on} />
+    </button>
+  );
+}
+
 /** A phone on/off row: optional icon tile, a title, an optional caption and a switch. */
-export function SwitchRow({ title, caption, icon, checked, onChange, className = '' }: { title: string; caption?: string; icon?: ReactNode; checked: boolean; onChange: (v: boolean) => void; className?: string }) {
+export function SwitchRow({ title, caption, icon, checked, onChange, disabled, className = '' }: { title: string; caption?: string; icon?: ReactNode; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; className?: string }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`w-full flex items-center gap-3.5 text-left cursor-pointer font-sans text-ink ${className}`}
+      className={`w-full flex items-center gap-3.5 text-left cursor-pointer disabled:opacity-60 disabled:cursor-default font-sans text-ink ${className}`}
     >
       {icon && <span className="flex-none w-10 h-10 rounded-[12px] bg-soft text-burgundy flex items-center justify-center">{icon}</span>}
       <span className="flex-1 min-w-0">
