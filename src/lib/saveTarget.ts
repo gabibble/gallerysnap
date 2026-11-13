@@ -29,8 +29,8 @@ export function useSaveTarget(): SaveTarget {
 }
 
 export const SAVE_LABEL: Record<SaveTarget, { one: string; all: string }> = {
-  photos: { one: 'Save to Photos app', all: 'Save all to Photos app' },
-  phone: { one: 'Save to this phone', all: 'Save all to this phone' },
+  photos: { one: 'Save', all: 'Save all' },
+  phone: { one: 'Save', all: 'Save all' },
   download: { one: 'Download', all: 'Download all' },
 };
 
