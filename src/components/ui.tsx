@@ -150,7 +150,8 @@ export function Switch({ label, checked, onChange, disabled, className = '' }: {
 
 export type StepName = 'photo' | 'straighten' | 'save';
 
-export function Header({ step, count, onHome, className = '' }: { step: StepName; count?: number; onHome: () => void; className?: string }) {
+/** `nav` replaces the step names. The start page uses it for its links and upload button. */
+export function Header({ step, count, onHome, nav, className = '' }: { step: StepName; count?: number; onHome: () => void; nav?: ReactNode; className?: string }) {
   const steps: { key: StepName; label: string; Icon: (p: IconProps) => ReactNode }[] = [
     { key: 'photo', label: 'Photo', Icon: PhotoIcon },
     { key: 'straighten', label: 'Straighten', Icon: StraightenIcon },
@@ -161,7 +162,9 @@ export function Header({ step, count, onHome, className = '' }: { step: StepName
       <button type="button" onClick={onHome} className="font-serif font-semibold text-[23px] sm:text-[26px] tracking-[-0.01em] cursor-pointer" aria-label="GallerySnap, start over">
         Gallery<em className="italic text-burgundy">Snap</em>
       </button>
-      {count && count > 1 ? (
+      {nav ? (
+        nav
+      ) : count && count > 1 ? (
         <p className="text-[18px] text-muted">{count} paintings</p>
       ) : (
         <ol className="flex gap-3 sm:gap-6 text-[15px] sm:text-[18px] text-muted" aria-label="Steps">

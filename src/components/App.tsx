@@ -16,7 +16,7 @@ import PhotoStep from './PhotoStep';
 import SaveStep, { type SaveStatus } from './SaveStep';
 import { PhoneAdjust, PhoneFinding, PhoneFound, PhoneSave } from './PhoneSteps';
 import { AdjustView, FindingView, FoundView } from './StraightenStep';
-import { Header, IconButton, MagnifierIcon, PhoneHeader, type StepName } from './ui';
+import { Button, Header, IconButton, MagnifierIcon, PhoneHeader, PhotoIcon, type StepName } from './ui';
 import { usePhone } from '@/lib/usePhone';
 
 type View = 'photo' | 'finding' | 'found' | 'adjust' | 'save' | 'wall' | 'saved';
@@ -44,6 +44,9 @@ export default function App() {
   const [albumUrl, setAlbumUrl] = useState<string | null>(null);
   const [savedIds, setSavedIds] = useState<string[]>([]);
 
+  // The start page's hidden file pickers. The header's upload button opens the first one.
+  const browseRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   // Latest paintings, for async work that outlives a render.
   const paintingsRef = useRef<Painting[]>([]);
   // Bumped on "start over", so slow work from an old session is ignored.
@@ -355,7 +358,24 @@ export default function App() {
 
   return (
     <div className="min-h-dvh flex flex-col">
-      <Header step={step} count={paintings.length} onHome={startOver} className="max-sm:hidden" />
+      <Header
+        step={step}
+        count={paintings.length}
+        onHome={startOver}
+        className={`max-sm:hidden ${view === 'photo' ? 'sticky top-0 z-20 bg-wall' : ''}`}
+        nav={
+          view === 'photo' ? (
+            <nav className="flex items-center gap-6 font-sans font-bold text-[16px] text-burgundy">
+              <a href="#what-it-does" className="max-md:hidden hover:underline">What it does</a>
+              <a href="#what-its-for" className="max-md:hidden hover:underline">What it&rsquo;s for</a>
+              <Button size="sm" className="!px-4" disabled={opening} onClick={() => browseRef.current?.click()}>
+                <PhotoIcon className="w-5 h-5 flex-none" />
+                Upload your photos
+              </Button>
+            </nav>
+          ) : undefined
+        }
+      />
       <PhoneHeader
         step={step}
         onHome={startOver}
@@ -370,7 +390,7 @@ export default function App() {
         }
       />
 
-      {view === 'photo' && <PhotoStep mode={mode} onModeChange={setMode} onFiles={addFiles} busy={opening} error={photoError} />}
+      {view === 'photo' && <PhotoStep mode={mode} onModeChange={setMode} onFiles={addFiles} busy={opening} error={photoError} browseRef={browseRef} cameraRef={cameraRef} />}
 
       {view === 'finding' && current && (phone ? <PhoneFinding src={current.displayUrl} name={current.name} /> : <FindingView src={current.displayUrl} name={current.name} />)}
 

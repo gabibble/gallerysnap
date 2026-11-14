@@ -49,10 +49,51 @@ h1, h2, h3 {
   outline-offset: 2px;
 }
 
-/* "Take photo" only makes sense on phones and tablets. */
-.touch-only { display: none; }
-@media (pointer: coarse), (hover: none) {
-  .touch-only { display: inline-flex; }
+html { scroll-behavior: smooth; }
+/* Jump links land below the sticky desktop header. */
+[id="what-it-does"], [id="what-its-for"] { scroll-margin-top: 68px; }
+
+/* The start page picture: a crooked painting on a table gets an outline, then
+   snaps straight while the table fades away. One 7 second loop, burgundy only. */
+.gs-snap {
+  --snap-table: #e2c9cb; --snap-plank: #d2b0b4; --snap-sky: #f6e9e8;
+  --snap-sun: #c4808c; --snap-hill: #a9596a;
+}
+.gs-snap-table { animation: gs-snap-table 7s infinite; }
+.gs-snap-painting { transform-box: fill-box; transform-origin: center; animation: gs-snap-painting 7s cubic-bezier(.3, 1.4, .5, 1) infinite; }
+.gs-snap-outline { stroke-dasharray: 840; stroke-dashoffset: 840; animation: gs-snap-outline 7s infinite; }
+.gs-snap-dot { opacity: 0; animation: gs-snap-dot 7s infinite; }
+.gs-snap-spark { opacity: 0; animation: gs-snap-spark 7s infinite; }
+.gs-snap-step { animation: 7s infinite; }
+.gs-snap-step:nth-child(1) { animation-name: gs-snap-step1; }
+.gs-snap-step:nth-child(2) { animation-name: gs-snap-step2; }
+.gs-snap-step:nth-child(3) { animation-name: gs-snap-step3; }
+@keyframes gs-snap-table { 0%, 50% { opacity: 1; } 58%, 92% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes gs-snap-painting {
+  0%, 50% { transform: rotate(-10deg) skewX(6deg) scale(.8); }
+  57%, 92% { transform: rotate(0) skewX(0) scale(1); }
+  100% { transform: rotate(-10deg) skewX(6deg) scale(.8); }
+}
+@keyframes gs-snap-outline {
+  0%, 12% { stroke-dashoffset: 840; opacity: 1; }
+  38%, 92% { stroke-dashoffset: 0; opacity: 1; }
+  96%, 100% { stroke-dashoffset: 0; opacity: 0; }
+}
+@keyframes gs-snap-dot { 0%, 36% { opacity: 0; } 42%, 92% { opacity: 1; } 96%, 100% { opacity: 0; } }
+@keyframes gs-snap-spark { 0%, 56% { opacity: 0; } 60%, 74% { opacity: 1; } 82%, 100% { opacity: 0; } }
+@keyframes gs-snap-step1 { 0%, 11% { background: var(--color-burgundy); color: var(--color-cream); } 13%, 100% { background: transparent; color: var(--color-muted); } }
+@keyframes gs-snap-step2 { 0%, 12% { background: transparent; color: var(--color-muted); } 13%, 55% { background: var(--color-burgundy); color: var(--color-cream); } 57%, 100% { background: transparent; color: var(--color-muted); } }
+@keyframes gs-snap-step3 { 0%, 56% { background: transparent; color: var(--color-muted); } 57%, 94% { background: var(--color-burgundy); color: var(--color-cream); } 96%, 100% { background: transparent; color: var(--color-muted); } }
+/* Less motion: show the finished, straightened picture and no movement. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .gs-snap-table { animation: none; opacity: 0; }
+  .gs-snap-painting { animation: none; transform: none; }
+  .gs-snap-outline { animation: none; stroke-dashoffset: 0; }
+  .gs-snap-dot { animation: none; opacity: 1; }
+  .gs-snap-spark { animation: none; }
+  .gs-snap-step { animation: none; }
+  .gs-snap-step:nth-child(3) { background: var(--color-burgundy); color: var(--color-cream); }
 }
 
 @keyframes gs-spin { to { transform: rotate(360deg); } }
