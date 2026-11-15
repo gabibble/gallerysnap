@@ -7,7 +7,7 @@ import { parseDimensions } from '@/lib/geometry';
 import { ALBUM_TITLE } from '@/lib/googlePhotos';
 import type { Painting } from '@/lib/types';
 import { SAVE_LABEL, SAVED_TEXT, useSaveTarget } from '@/lib/saveTarget';
-import { BackLink, Button, DownloadIcon, PhotoIcon } from './ui';
+import { ArrowRightIcon, BackLink, Button, DownloadIcon, GooglePhotosIcon, TextButton } from './ui';
 
 export type SaveStatus =
   | { kind: 'idle' }
@@ -26,19 +26,17 @@ type Props = {
   onAnother: () => void;
 };
 
-function Hung({ src, alt, label, title, size }: { src: string; alt: string; label: string; title: string; size: { width: number; height: number } }) {
+function Hung({ src, alt, label, after = false, size }: { src: string; alt: string; label: string; after?: boolean; size: { width: number; height: number } }) {
   return (
-    <figure className="flex flex-col items-center min-w-0">
-      <figcaption className="font-serif font-semibold text-[15px] uppercase tracking-[0.16em] text-muted mb-2.5">{label}</figcaption>
-      {/* Both pictures get the same box, so they hang level and at equal size. */}
+    <figure className="flex flex-col items-center gap-3 min-w-0">
+      {/* Both pictures get the same box, so they sit level and at equal size. */}
       <div className="h-[150px] w-[150px] min-[480px]:h-[200px] min-[480px]:w-[200px] md:h-[250px] md:w-[320px] flex items-center justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} className="max-w-full max-h-full rounded-[2px] shadow-[0_6px_16px_-8px_rgba(60,40,20,.45)]" />
+        <img src={src} alt={alt} className={`max-w-full max-h-full ${after ? 'rounded-[4px] shadow-[0_16px_36px_rgba(35,39,47,.22)]' : 'rounded-[8px] opacity-90'}`} />
       </div>
-      <p className="mt-3 max-w-full bg-card border border-line rounded-[4px] px-3.5 py-1.5 text-[14px] text-muted text-center leading-snug">
-        <b className="block text-ink font-semibold truncate max-w-[280px]">{title}</b>
-        {size.width} × {size.height} pixels
-      </p>
+      <figcaption className={`py-1.5 px-3.5 rounded-full text-[14px] text-center ${after ? 'bg-ok-bg text-ok' : 'bg-wall text-muted'}`}>
+        <b className={after ? '' : 'text-ink'}>{label}</b> · {size.width} × {size.height} pixels
+      </figcaption>
     </figure>
   );
 }
@@ -51,55 +49,51 @@ export default function SaveStep({ painting, status, onGoogle, onDownload, onDim
   const target = useSaveTarget();
 
   return (
-    <main className="flex flex-col gap-4 px-4 sm:px-10 py-5 max-w-[1100px] mx-auto w-full">
-      <BackLink onClick={onBack}>Back to straighten</BackLink>
-      <div className="flex flex-col items-center gap-5">
-        <h1 className="text-[28px] sm:text-[38px] text-center">All done. Here&rsquo;s your painting.</h1>
+    <div className="px-4 sm:px-10 pb-10 max-w-[1280px] mx-auto w-full flex-1 flex flex-col">
+      <main className="flex-1 bg-card rounded-[28px] px-5 sm:px-8 pt-7 pb-8 flex flex-col items-center gap-5">
+        <BackLink onClick={onBack}>Back to straighten</BackLink>
+        <h1 className="text-[30px] sm:text-[40px] text-center">All done. Here&rsquo;s your painting.</h1>
 
-        <div className="flex items-start justify-center gap-3 sm:gap-8 max-w-full">
-          <Hung src={painting.displayUrl} alt="Your photo before" label="Before" title="Your photo" size={painting.turns % 2 ? { width: painting.height, height: painting.width } : { width: painting.width, height: painting.height }} />
-          <span aria-hidden className="text-[32px] sm:text-[40px] text-muted self-center pb-10">
-            →
+        <div className="flex items-start justify-center gap-3 sm:gap-6 max-w-full">
+          <Hung src={painting.displayUrl} alt="Your photo before" label="Before" size={painting.turns % 2 ? { width: painting.height, height: painting.width } : { width: painting.width, height: painting.height }} />
+          <span aria-hidden className="flex-none w-11 h-11 rounded-full bg-tile flex items-center justify-center self-center mb-11">
+            <ArrowRightIcon className="w-5 h-5" />
           </span>
-          {painting.resultUrl && painting.resultSize && (
-            <Hung src={painting.resultUrl} alt="Your painting, cropped and straightened" label="After" title={displayName(painting.name)} size={painting.resultSize} />
-          )}
+          {painting.resultUrl && painting.resultSize && <Hung src={painting.resultUrl} alt={`${displayName(painting.name)}, cropped and straightened`} label="After" after size={painting.resultSize} />}
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-3 sm:gap-5 w-full max-w-[820px]">
-          <Button onClick={onGoogle} busy={working && status.what === 'google'} disabled={working}>
-            <PhotoIcon className="w-[26px] h-[26px] flex-none" />
+        <div className="grid sm:grid-cols-2 gap-3.5 w-full max-w-[820px]">
+          <Button className="!min-h-[68px] !rounded-[20px]" onClick={onGoogle} busy={working && status.what === 'google'} disabled={working}>
+            <GooglePhotosIcon className="w-[30px] h-[30px]" />
             Save to Google Photos
           </Button>
-          <Button onClick={onDownload} busy={working && status.what === 'download'} disabled={working}>
-            <DownloadIcon className="w-[26px] h-[26px] flex-none" />
+          <Button className="!min-h-[68px] !rounded-[20px]" onClick={onDownload} busy={working && status.what === 'download'} disabled={working}>
+            <DownloadIcon className="w-6 h-6 flex-none" />
             {SAVE_LABEL[target].one}
           </Button>
         </div>
 
-        <div aria-live="polite" className="text-center text-[19px] min-h-[1.5em]">
-          {status.kind === 'idle' && <p className="italic text-muted text-[18px]">Google Photos saves go into an album called &ldquo;{ALBUM_TITLE}&rdquo;.</p>}
+        <div aria-live="polite" className="text-center text-[17px] min-h-[1.5em]">
+          {status.kind === 'idle' && <p className="text-muted text-[15px]">Google Photos saves go into an album called &ldquo;{ALBUM_TITLE}&rdquo;.</p>}
           {status.kind === 'working' && <p className="text-muted">{status.what === 'google' ? 'Saving to Google Photos…' : 'Getting your picture ready…'}</p>}
           {status.kind === 'saved' && (
-            <p className="font-semibold">
+            <p className="font-bold">
               Saved to your &ldquo;{ALBUM_TITLE}&rdquo; album.{' '}
-              <a href={status.url ?? 'https://photos.google.com/'} target="_blank" rel="noopener noreferrer" className="text-burgundy underline font-sans font-bold">
+              <a href={status.url ?? 'https://photos.google.com/'} target="_blank" rel="noopener noreferrer" className="underline hover:text-rasp">
                 See it in Google Photos
               </a>
             </p>
           )}
-          {status.kind === 'downloaded' && (
-            <p className="font-semibold">{SAVED_TEXT[target](outputFilename(painting.name))}</p>
-          )}
+          {status.kind === 'downloaded' && <p className="font-bold">{SAVED_TEXT[target](outputFilename(painting.name))}</p>}
           {status.kind === 'error' && (
-            <p role="alert" className="text-burgundy font-semibold">
+            <p role="alert" className="text-alert font-bold">
               {status.message}
             </p>
           )}
         </div>
 
-        <div className="flex flex-col items-center gap-3 text-[17px]">
-          {sizeOpen ? (
+        <div className="flex flex-col items-center gap-3 text-[16px]">
+          {sizeOpen && (
             <form
               className="flex flex-wrap items-center justify-center gap-2.5"
               onSubmit={(e) => {
@@ -117,28 +111,24 @@ export default function SaveStep({ painting, status, onGoogle, onDownload, onDim
                 placeholder="16 x 20"
                 inputMode="text"
                 autoComplete="off"
-                className="w-[130px] font-sans text-[18px] px-3 py-2 rounded-[10px] border-2 border-line bg-card-on"
+                className="w-[130px] h-12 text-[17px] px-3.5 rounded-[14px] border-2 border-line bg-card"
               />
               <Button size="sm" variant="outline" type="submit" disabled={sizeBad || working}>
                 Use this shape
               </Button>
               {sizeBad && (
-                <p role="alert" className="basis-full text-center text-burgundy">
+                <p role="alert" className="basis-full text-center text-alert font-bold">
                   Type two numbers, like 16 x 20.
                 </p>
               )}
             </form>
-          ) : (
-            <button type="button" onClick={() => setSizeOpen(true)} className="font-sans font-bold text-burgundy cursor-pointer hover:underline">
-              Shape looks a little off? Enter the painting&rsquo;s real size
-            </button>
           )}
-          <button type="button" onClick={onAnother} className="font-sans font-bold text-burgundy cursor-pointer hover:underline">
-            Straighten another photo
-          </button>
+          <div className="flex flex-wrap justify-center gap-x-7 gap-y-2">
+            {!sizeOpen && <TextButton onClick={() => setSizeOpen(true)}>Shape looks a little off? Enter the real size</TextButton>}
+            <TextButton onClick={onAnother}>Straighten another photo</TextButton>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
-

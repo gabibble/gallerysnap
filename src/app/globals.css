@@ -1,58 +1,64 @@
 @import "tailwindcss";
 
-/* GallerySnap's look: a cream gallery wall, deep grey words, burgundy buttons. */
+/* GallerySnap's look: neutral greys so the artwork carries the colour, inky
+   grey words and buttons, and raspberry only on the logo and the crop lines. */
 @theme inline {
-  --color-wall: #f6f0e4;
-  --color-card: #fbf8f1;
-  --color-card-on: #fffdf8;
-  --color-soft: #eee5d3;
-  --color-line: #d8cbb3;
-  --color-ink: #2e2f31;
-  --color-muted: #635d55;
-  --color-burgundy: #7a2235;
-  --color-burgundy-dk: #521522;
-  --color-cream: #fbf6ec;
-  --color-gilt: #c9a14a;
-  --color-ok-bg: #e3e8d6;
-  --color-ok: #45602f;
-  --color-need-bg: #f3e2bd;
-  --color-need: #7a5410;
-  --font-serif: var(--font-source-serif), "Iowan Old Style", Georgia, serif;
-  --font-sans: var(--font-atkinson), Verdana, system-ui, sans-serif;
+  --color-wall: #f3f3f3;
+  --color-card: #ffffff;
+  --color-tile: #ededed;
+  --color-line: #e2e2e2;
+  --color-track: #cacaca;
+  --color-ink: #23272f;
+  --color-ink-dk: #14171c;
+  --color-muted: #596070;
+  --color-rasp: #b4166e;
+  --color-rasp-dk: #8c1054;
+  --color-ok-bg: #e9f7ee;
+  --color-ok: #17663a;
+  --color-need-bg: #fbefd5;
+  --color-need: #7a4b00;
+  --color-alert: #a3162f;
+  --font-sans: var(--font-jakarta), system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 html {
   background: var(--color-wall);
   color-scheme: light;
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--color-wall);
   color: var(--color-ink);
-  font-family: var(--font-serif);
-  font-size: 19px;
+  font-family: var(--font-sans);
+  font-size: 18px;
   line-height: 1.5;
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
 }
 
 h1, h2, h3 {
-  font-family: var(--font-serif);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
   text-wrap: balance;
 }
+h3 { font-weight: 700; letter-spacing: -0.01em; line-height: 1.25; }
 
 :focus-visible {
-  outline: 3px solid var(--color-gilt);
+  outline: 3px solid var(--color-rasp);
   outline-offset: 2px;
 }
 
-/* "Take photo" only makes sense on phones and tablets. */
-.touch-only { display: none; }
-@media (pointer: coarse), (hover: none) {
-  .touch-only { display: inline-flex; }
+/* Jump links land below the sticky desktop header. */
+[id="what-it-does"] { scroll-margin-top: 84px; }
+
+/* The start page picture: the maple table the painting lies on. */
+.gs-table {
+  background:
+    repeating-linear-gradient(90deg, rgba(120, 80, 40, 0) 0 138px, rgba(110, 72, 36, .35) 138px 140px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .07) 0 9px, rgba(140, 95, 50, .06) 9px 23px, rgba(255, 255, 255, .04) 23px 41px),
+    linear-gradient(100deg, #ddbe96, #d2ae82 45%, #dcbc93);
 }
 
 @keyframes gs-spin { to { transform: rotate(360deg); } }
@@ -62,5 +68,6 @@ h1, h2, h3 {
   animation: gs-spin 0.8s linear infinite; display: inline-block; flex: none;
 }
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   .gs-spinner { animation-duration: 2.4s; }
 }
