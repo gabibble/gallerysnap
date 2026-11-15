@@ -77,7 +77,7 @@ function Switches({ enhance, onEnhance, disabled, frame }: { enhance: boolean; o
           <div className="h-px bg-line" />
         </>
       )}
-      <SwitchRow className="py-3" icon={<WandIcon className="w-[22px] h-[22px]" />} title="Brighten colors" checked={enhance} onChange={onEnhance} disabled={disabled} />
+      <SwitchRow className="py-3" icon={<WandIcon className="w-[22px] h-[22px]" />} title="Enhance colors" checked={enhance} onChange={onEnhance} disabled={disabled} />
     </div>
   );
 }

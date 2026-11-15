@@ -208,7 +208,7 @@ export type TurnProps = {
   onEnhance: (on: boolean) => void;
 };
 
-/** Turn left / Turn right and Brighten colors, and the AI's "looks sideways" hint when there is one. */
+/** Turn left / Turn right and Enhance colors, and the AI's "looks sideways" hint when there is one. */
 function TurnBar({ onTurn, turning, enhance, onEnhance, suggestedTurns, disabled }: TurnProps & { suggestedTurns?: Turns | null; disabled?: boolean }) {
   const off = turning || disabled;
   return (

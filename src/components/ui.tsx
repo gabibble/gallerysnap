@@ -314,7 +314,7 @@ export function PhoneHeader({ step, count, onHome, onBack, right, className = ''
   );
 }
 
-/** Brighten colors: a wand, the words (where there's room) and an on/off switch. */
+/** Enhance colors: a wand, the words (where there's room) and an on/off switch. */
 export function EnhanceSwitch({ on, onChange, disabled, className = '' }: { on: boolean; onChange: (v: boolean) => void; disabled?: boolean; className?: string }) {
   return (
     <Switch
@@ -325,7 +325,7 @@ export function EnhanceSwitch({ on, onChange, disabled, className = '' }: { on: 
       label={
         <>
           <WandIcon className="w-5 h-5 flex-none" />
-          Brighten colors
+          Enhance colors
         </>
       }
     />
