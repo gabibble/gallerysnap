@@ -1,99 +1,64 @@
 @import "tailwindcss";
 
-/* GallerySnap's look: a cream gallery wall, deep grey words, burgundy buttons. */
+/* GallerySnap's look: neutral greys so the artwork carries the colour, inky
+   grey words and buttons, and raspberry only on the logo and the crop lines. */
 @theme inline {
-  --color-wall: #f6f0e4;
-  --color-card: #fbf8f1;
-  --color-card-on: #fffdf8;
-  --color-soft: #eee5d3;
-  --color-line: #d8cbb3;
-  --color-ink: #2e2f31;
-  --color-muted: #635d55;
-  --color-burgundy: #7a2235;
-  --color-burgundy-dk: #521522;
-  --color-cream: #fbf6ec;
-  --color-gilt: #c9a14a;
-  --color-ok-bg: #e3e8d6;
-  --color-ok: #45602f;
-  --color-need-bg: #f3e2bd;
-  --color-need: #7a5410;
-  --font-serif: var(--font-source-serif), "Iowan Old Style", Georgia, serif;
-  --font-sans: var(--font-atkinson), Verdana, system-ui, sans-serif;
+  --color-wall: #f3f3f3;
+  --color-card: #ffffff;
+  --color-tile: #ededed;
+  --color-line: #e2e2e2;
+  --color-track: #cacaca;
+  --color-ink: #23272f;
+  --color-ink-dk: #14171c;
+  --color-muted: #596070;
+  --color-rasp: #b4166e;
+  --color-rasp-dk: #8c1054;
+  --color-ok-bg: #e9f7ee;
+  --color-ok: #17663a;
+  --color-need-bg: #fbefd5;
+  --color-need: #7a4b00;
+  --color-alert: #a3162f;
+  --font-sans: var(--font-jakarta), system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 html {
   background: var(--color-wall);
   color-scheme: light;
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--color-wall);
   color: var(--color-ink);
-  font-family: var(--font-serif);
-  font-size: 19px;
+  font-family: var(--font-sans);
+  font-size: 18px;
   line-height: 1.5;
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
 }
 
 h1, h2, h3 {
-  font-family: var(--font-serif);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
   text-wrap: balance;
 }
+h3 { font-weight: 700; letter-spacing: -0.01em; line-height: 1.25; }
 
 :focus-visible {
-  outline: 3px solid var(--color-gilt);
+  outline: 3px solid var(--color-rasp);
   outline-offset: 2px;
 }
 
-html { scroll-behavior: smooth; }
 /* Jump links land below the sticky desktop header. */
-[id="what-it-does"], [id="what-its-for"] { scroll-margin-top: 68px; }
+[id="what-it-does"] { scroll-margin-top: 84px; }
 
-/* The start page picture: a crooked painting on a table gets an outline, then
-   snaps straight while the table fades away. One 7 second loop, burgundy only. */
-.gs-snap {
-  --snap-table: #e2c9cb; --snap-plank: #d2b0b4; --snap-sky: #f6e9e8;
-  --snap-sun: #c4808c; --snap-hill: #a9596a;
-}
-.gs-snap-table { animation: gs-snap-table 7s infinite; }
-.gs-snap-painting { transform-box: fill-box; transform-origin: center; animation: gs-snap-painting 7s cubic-bezier(.3, 1.4, .5, 1) infinite; }
-.gs-snap-outline { stroke-dasharray: 840; stroke-dashoffset: 840; animation: gs-snap-outline 7s infinite; }
-.gs-snap-dot { opacity: 0; animation: gs-snap-dot 7s infinite; }
-.gs-snap-spark { opacity: 0; animation: gs-snap-spark 7s infinite; }
-.gs-snap-step { animation: 7s infinite; }
-.gs-snap-step:nth-child(1) { animation-name: gs-snap-step1; }
-.gs-snap-step:nth-child(2) { animation-name: gs-snap-step2; }
-.gs-snap-step:nth-child(3) { animation-name: gs-snap-step3; }
-@keyframes gs-snap-table { 0%, 50% { opacity: 1; } 58%, 92% { opacity: 0; } 100% { opacity: 1; } }
-@keyframes gs-snap-painting {
-  0%, 50% { transform: rotate(-10deg) skewX(6deg) scale(.8); }
-  57%, 92% { transform: rotate(0) skewX(0) scale(1); }
-  100% { transform: rotate(-10deg) skewX(6deg) scale(.8); }
-}
-@keyframes gs-snap-outline {
-  0%, 12% { stroke-dashoffset: 840; opacity: 1; }
-  38%, 92% { stroke-dashoffset: 0; opacity: 1; }
-  96%, 100% { stroke-dashoffset: 0; opacity: 0; }
-}
-@keyframes gs-snap-dot { 0%, 36% { opacity: 0; } 42%, 92% { opacity: 1; } 96%, 100% { opacity: 0; } }
-@keyframes gs-snap-spark { 0%, 56% { opacity: 0; } 60%, 74% { opacity: 1; } 82%, 100% { opacity: 0; } }
-@keyframes gs-snap-step1 { 0%, 11% { background: var(--color-burgundy); color: var(--color-cream); } 13%, 100% { background: transparent; color: var(--color-muted); } }
-@keyframes gs-snap-step2 { 0%, 12% { background: transparent; color: var(--color-muted); } 13%, 55% { background: var(--color-burgundy); color: var(--color-cream); } 57%, 100% { background: transparent; color: var(--color-muted); } }
-@keyframes gs-snap-step3 { 0%, 56% { background: transparent; color: var(--color-muted); } 57%, 94% { background: var(--color-burgundy); color: var(--color-cream); } 96%, 100% { background: transparent; color: var(--color-muted); } }
-/* Less motion: show the finished, straightened picture and no movement. */
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  .gs-snap-table { animation: none; opacity: 0; }
-  .gs-snap-painting { animation: none; transform: none; }
-  .gs-snap-outline { animation: none; stroke-dashoffset: 0; }
-  .gs-snap-dot { animation: none; opacity: 1; }
-  .gs-snap-spark { animation: none; }
-  .gs-snap-step { animation: none; }
-  .gs-snap-step:nth-child(3) { background: var(--color-burgundy); color: var(--color-cream); }
+/* The start page picture: the maple table the painting lies on. */
+.gs-table {
+  background:
+    repeating-linear-gradient(90deg, rgba(120, 80, 40, 0) 0 138px, rgba(110, 72, 36, .35) 138px 140px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .07) 0 9px, rgba(140, 95, 50, .06) 9px 23px, rgba(255, 255, 255, .04) 23px 41px),
+    linear-gradient(100deg, #ddbe96, #d2ae82 45%, #dcbc93);
 }
 
 @keyframes gs-spin { to { transform: rotate(360deg); } }
@@ -103,5 +68,6 @@ html { scroll-behavior: smooth; }
   animation: gs-spin 0.8s linear infinite; display: inline-block; flex: none;
 }
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   .gs-spinner { animation-duration: 2.4s; }
 }

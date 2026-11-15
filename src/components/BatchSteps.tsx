@@ -6,7 +6,7 @@ import { ALBUM_TITLE } from '@/lib/googlePhotos';
 import type { Painting } from '@/lib/types';
 import type { SaveStatus } from './SaveStep';
 import { SAVE_LABEL, SAVED_ALL_TEXT, useSaveTarget } from '@/lib/saveTarget';
-import { Button, CheckIcon, DownloadIcon, PhotoIcon, RotateLeftIcon, RotateRightIcon } from './ui';
+import { Button, CheckIcon, Chip, DownloadIcon, GooglePhotosIcon, RotateLeftIcon, RotateRightIcon, TextButton } from './ui';
 
 type WallProps = {
   paintings: Painting[];
@@ -33,38 +33,38 @@ export function WallStep({ paintings, status, onFix, onTurn, redrawing, onGoogle
   else sub = `${good} look${good === 1 ? 's' : ''} good. ${needs} need${needs === 1 ? 's' : ''} you to choose ${needs === 1 ? 'its' : 'their'} corners.`;
 
   return (
-    <main className="flex flex-col items-center gap-5 px-4 sm:px-10 py-7">
-      <h1 className="text-[28px] sm:text-[38px] text-center">
+    <main className="flex flex-col items-center gap-5 px-4 sm:px-10 pt-3 pb-10">
+      <h1 className="text-[28px] sm:text-[40px] text-center">
         {working > 0 ? `Straightening ${total} paintings` : `${total} paintings straightened`}
       </h1>
-      <p className="text-[19px] sm:text-[22px] text-muted text-center flex items-center gap-3" role="status">
-        {working > 0 ? <span className="gs-spinner text-burgundy" aria-hidden /> : null}
+      <p className="text-[16px] sm:text-[19px] text-muted text-center flex items-center gap-3 -mt-2.5" role="status">
+        {working > 0 ? <span className="gs-spinner" aria-hidden /> : null}
         <span>{sub}</span>
       </p>
 
-      <ul className="grid grid-cols-1 min-[520px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 w-full max-w-[1040px]">
+      <ul className="flex flex-wrap justify-center gap-2.5 sm:gap-4 w-full max-w-[1120px]">
         {paintings.map((p) => {
           const need = p.status === 'needs';
           return (
-            <li key={p.id} className={`flex flex-col items-start gap-2 p-3 rounded-[16px] border-2 bg-card ${need ? 'border-burgundy' : 'border-line'}`}>
-              <div className="w-full h-[160px] rounded-[8px] bg-soft flex items-center justify-center overflow-hidden">
+            <li key={p.id} className={`w-[calc(50%-5px)] sm:w-[268px] flex flex-col items-start gap-2 sm:gap-2.5 p-2 sm:p-3 rounded-[20px] sm:rounded-[24px] border-2 bg-card ${need ? 'border-ink' : 'border-card'}`}>
+              <div className="w-full h-[104px] sm:h-[180px] rounded-[12px] sm:rounded-[14px] bg-wall flex items-center justify-center overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={p.status === 'good' && p.resultUrl ? p.resultUrl : p.previewUrl}
                   alt={p.status === 'good' ? `${displayName(p.name)}, straightened` : `${displayName(p.name)}, original photo`}
-                  className={`max-w-full max-h-[160px] shadow-[0_4px_10px_-6px_rgba(60,40,20,.5)] ${p.status === 'working' ? 'opacity-50' : ''}`}
+                  className={`max-w-[90%] max-h-[92px] sm:max-h-[160px] ${p.status === 'working' ? 'opacity-50' : ''}`}
                 />
               </div>
-              <p className="text-[15px] text-muted truncate max-w-full">{displayName(p.name)}</p>
-              {p.status === 'working' && <span className="font-sans font-bold text-[14px] px-2.5 py-1 rounded-full bg-soft text-muted">Working…</span>}
+              <p className="text-[15px] text-muted truncate max-w-full max-sm:hidden">{displayName(p.name)}</p>
+              {p.status === 'working' && <Chip className="!text-muted">Working…</Chip>}
               {p.status === 'good' && (
-                <span className="font-sans font-bold text-[14px] px-2.5 py-1 rounded-full bg-ok-bg text-ok inline-flex items-center gap-1">
+                <Chip tone="ok">
                   <CheckIcon className="w-3.5 h-3.5" /> Looks good
-                </span>
+                </Chip>
               )}
-              {need && <span className="font-sans font-bold text-[14px] px-2.5 py-1 rounded-full bg-need-bg text-need">Needs a look</span>}
+              {need && <Chip tone="need">Needs a look</Chip>}
               {p.status === 'good' && p.suggestedTurns ? (
-                <p className="text-[15px] text-burgundy font-semibold">{p.suggestedTurns === 2 ? 'Looks upside down.' : 'Looks like it is on its side.'}</p>
+                <p className="text-[15px] text-need font-bold">{p.suggestedTurns === 2 ? 'Looks upside down.' : 'Looks like it is on its side.'}</p>
               ) : null}
               {p.status === 'good' && (
                 <div className="flex gap-2 w-full">
@@ -81,7 +81,7 @@ export function WallStep({ paintings, status, onFix, onTurn, redrawing, onGoogle
                   </Button>
                 </div>
               )}
-              <Button size="sm" variant={need ? 'solid' : 'outline'} className="w-full" disabled={p.status === 'working' || saving} onClick={() => onFix(p.id)}>
+              <Button size="sm" variant={need ? 'solid' : 'outline'} className="w-full mt-auto" disabled={p.status === 'working' || saving} onClick={() => onFix(p.id)}>
                 {need ? 'Choose corners' : 'Fix corners'}
               </Button>
             </li>
@@ -89,33 +89,33 @@ export function WallStep({ paintings, status, onFix, onTurn, redrawing, onGoogle
         })}
       </ul>
 
-      <div className="grid sm:grid-cols-2 gap-3 sm:gap-5 w-full max-w-[820px]">
-        <Button onClick={onGoogle} busy={saving && status.what === 'google'} disabled={saving || redrawing || working > 0 || good === 0}>
-          <PhotoIcon className="w-[26px] h-[26px] flex-none" />
+      <div className="grid sm:grid-cols-2 gap-2.5 sm:gap-3.5 w-full max-w-[820px] mt-2">
+        <Button className="sm:!min-h-[68px] sm:!rounded-[20px]" onClick={onGoogle} busy={saving && status.what === 'google'} disabled={saving || redrawing || working > 0 || good === 0}>
+          <GooglePhotosIcon className="w-[30px] h-[30px]" />
           Save all to Google Photos
         </Button>
-        <Button onClick={onDownload} busy={saving && status.what === 'download'} disabled={saving || redrawing || working > 0 || good === 0}>
-          <DownloadIcon className="w-[26px] h-[26px] flex-none" />
+        <Button className="sm:!min-h-[68px] sm:!rounded-[20px]" onClick={onDownload} busy={saving && status.what === 'download'} disabled={saving || redrawing || working > 0 || good === 0}>
+          <DownloadIcon className="w-6 h-6 flex-none" />
           {SAVE_LABEL[target].all}
         </Button>
       </div>
 
-      <div aria-live="polite" className="text-center text-[18px] min-h-[1.5em]">
+      <div aria-live="polite" className="text-center text-[15px] min-h-[1.5em]">
         {status.kind === 'idle' && needs > 0 && working === 0 && good > 0 && (
-          <p className="italic text-muted">Paintings that need a look are left out until you choose their corners.</p>
+          <p className="text-muted">Paintings that need a look are left out until you choose their corners.</p>
         )}
         {status.kind === 'working' && <p className="text-muted">{status.what === 'google' ? 'Saving to Google Photos…' : 'Getting your pictures ready…'}</p>}
-        {status.kind === 'downloaded' && <p className="font-semibold">{SAVED_ALL_TEXT[target]}</p>}
+        {status.kind === 'downloaded' && <p className="font-bold text-[17px]">{SAVED_ALL_TEXT[target]}</p>}
         {status.kind === 'error' && (
-          <p role="alert" className="text-burgundy font-semibold">
+          <p role="alert" className="text-alert font-bold text-[17px]">
             {status.message}
           </p>
         )}
       </div>
 
-      <button type="button" onClick={onStartOver} className="font-sans font-bold text-[17px] text-burgundy cursor-pointer hover:underline">
+      <TextButton onClick={onStartOver} className="text-[16px]">
         Start over with different photos
-      </button>
+      </TextButton>
     </main>
   );
 }
@@ -124,30 +124,31 @@ export function SavedStep({ paintings, albumUrl, onNew }: { paintings: Painting[
   const n = paintings.length;
   return (
     <main className="flex flex-col items-center gap-6 px-4 py-10 sm:py-14">
-      <span className="w-[72px] h-[72px] rounded-full bg-burgundy text-cream flex items-center justify-center">
+      <span className="w-[72px] h-[72px] rounded-full bg-ok-bg text-ok flex items-center justify-center">
         <CheckIcon className="w-10 h-10" />
       </span>
-      <h1 className="text-[28px] sm:text-[38px] text-center">
+      <h1 className="text-[28px] sm:text-[40px] text-center">
         Saved {n} painting{n === 1 ? '' : 's'} to Google Photos
       </h1>
-      <p className="text-[20px] sm:text-[22px] text-muted text-center">
+      <p className="text-[17px] sm:text-[19px] text-muted text-center -mt-2">
         They&rsquo;re in your album called <b className="text-ink">{ALBUM_TITLE}</b>.
       </p>
       <ul className="flex flex-wrap justify-center items-end gap-4 max-w-[900px]">
         {paintings.slice(0, 12).map((p) => (
           <li key={p.id}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={p.resultUrl ?? p.previewUrl} alt={displayName(p.name)} className="h-[110px] w-auto shadow-[0_6px_14px_-8px_rgba(60,40,20,.5)]" />
+            <img src={p.resultUrl ?? p.previewUrl} alt={displayName(p.name)} className="h-[110px] w-auto rounded-[4px] shadow-[0_16px_30px_-14px_rgba(35,39,47,.4)]" />
           </li>
         ))}
       </ul>
-      <div className="grid sm:grid-cols-2 gap-3 sm:gap-5 w-full max-w-[820px]">
+      <div className="grid sm:grid-cols-2 gap-2.5 sm:gap-3.5 w-full max-w-[820px]">
         <a
           href={albumUrl ?? 'https://photos.google.com/'}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center border-2 border-burgundy bg-burgundy text-cream hover:bg-burgundy-dk hover:border-burgundy-dk font-sans font-bold text-[21px] sm:text-[22px] px-6 py-4 rounded-[14px] min-h-[60px] transition-colors"
+          className="inline-flex items-center justify-center gap-2.5 bg-ink text-white hover:bg-ink-dk font-bold text-[19px] px-7 rounded-[18px] min-h-[64px] transition-colors"
         >
+          <GooglePhotosIcon className="w-[30px] h-[30px]" />
           Open Google Photos
         </a>
         <Button variant="outline" onClick={onNew}>

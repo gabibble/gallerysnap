@@ -3,7 +3,7 @@
 // Step 2: check the outline the app found, or drag the four corners by hand.
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 import { isConvexQuad, orderQuad, type Point, type Quad, type Turns } from '@/lib/geometry';
-import { BackLink, Button, MagnifierIcon, RotateLeftIcon, RotateRightIcon, Switch, EnhanceSwitch } from './ui';
+import { BackLink, Button, CheckIcon, Chip, EnhanceSwitch, FrameIcon, IconButton, MagnifierIcon, RotateLeftIcon, RotateRightIcon, Switch } from './ui';
 
 const ZOOM = 3;
 
@@ -22,11 +22,11 @@ function Square({ children }: { children: (fit: number | undefined) => ReactNode
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  const PAD = 16;
+  const PAD = 24;
   return (
     <div
       ref={ref}
-      className="w-[min(100%,60dvh,600px)] lg:w-[min(100%,72dvh,660px)] aspect-square flex-none flex items-center justify-center bg-soft rounded-[16px]"
+      className="w-[min(100%,60dvh,600px)] lg:w-[min(100%,74dvh,680px)] aspect-square flex-none flex items-center justify-center bg-card rounded-[28px]"
       style={{ padding: PAD }}
     >
       {children(size > 0 ? size - 2 * PAD : undefined)}
@@ -34,7 +34,7 @@ function Square({ children }: { children: (fit: number | undefined) => ReactNode
   );
 }
 
-/** The photo with the gold outline on top, and optional draggable handles. */
+/** The photo with the raspberry outline on top, and optional draggable handles. */
 export function PhotoStage({
   src,
   alt,
@@ -44,6 +44,7 @@ export function PhotoStage({
   onActive,
   floatingLoupe,
   imgMaxHeight,
+  shade,
   children,
 }: {
   src: string;
@@ -56,6 +57,8 @@ export function PhotoStage({
   floatingLoupe?: boolean;
   /** Fit the photo into this many pixels of height (phones). */
   imgMaxHeight?: number;
+  /** Darken everything outside the outline: the part that will be trimmed away. */
+  shade?: boolean;
   children?: ReactNode;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -114,12 +117,17 @@ export function PhotoStage({
   return (
     <div ref={boxRef} className="relative inline-block max-w-full select-none leading-[0]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={alt} draggable={false} className={`block max-w-full w-auto h-auto rounded-[3px] ${imgMaxHeight ? '' : 'max-h-[52dvh] lg:max-h-[68dvh]'}`}
+      <img src={src} alt={alt} draggable={false} className={`block max-w-full w-auto h-auto rounded-[12px] ${imgMaxHeight ? '' : 'max-h-[52dvh] lg:max-h-[68dvh]'}`}
         style={imgMaxHeight ? { maxHeight: imgMaxHeight } : undefined}
       />
+      {shade && (
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full rounded-[12px] overflow-hidden pointer-events-none" aria-hidden>
+          <path d={`M0 0H100V100H0Z M${[corners[0], corners[3], corners[2], corners[1]].map((p) => `${p.x * 100} ${p.y * 100}`).join('L')}Z`} fill="rgba(35,39,47,.45)" fillRule="evenodd" />
+        </svg>
+      )}
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full overflow-visible pointer-events-none" aria-hidden>
-        <polygon points={points} fill="none" stroke="rgba(0,0,0,.4)" strokeWidth={5} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-        <polygon points={points} fill="none" stroke="var(--color-gilt)" strokeWidth={3} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+        <polygon points={points} fill="none" stroke="#fff" strokeWidth={7} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+        <polygon points={points} fill="none" stroke="var(--color-rasp)" strokeWidth={3.5} vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeDasharray={onMove ? '9 8' : undefined} />
       </svg>
       {corners.map((p, i) =>
         onMove ? (
@@ -134,9 +142,9 @@ export function PhotoStage({
             onKeyDown={(e) => key(e, i)}
             onFocus={() => onActive?.(i, false)}
             style={{ left: `${p.x * 100}%`, top: `${p.y * 100}%`, touchAction: 'none' }}
-            className={`absolute w-11 h-11 -ml-[22px] -mt-[22px] rounded-full border-4 border-cream font-sans font-bold text-[18px] leading-none flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,.5)] ${
+            className={`absolute w-11 h-11 -ml-[22px] -mt-[22px] rounded-full border-4 font-extrabold text-[18px] leading-none flex items-center justify-center shadow-[0_2px_8px_rgba(35,39,47,.45)] ${
               dragging === i ? 'cursor-grabbing' : 'cursor-grab'
-            } ${active === i ? 'bg-gilt text-ink z-10' : 'bg-burgundy/90 text-cream'}`}
+            } ${active === i ? 'bg-white border-rasp text-rasp z-10' : 'bg-rasp border-white text-white'}`}
           >
             {i + 1}
           </button>
@@ -145,7 +153,7 @@ export function PhotoStage({
             key={i}
             aria-hidden
             style={{ left: `${p.x * 100}%`, top: `${p.y * 100}%` }}
-            className="absolute w-[22px] h-[22px] -ml-[11px] -mt-[11px] rounded-full bg-gilt border-[3px] border-white shadow-[0_0_0_6px_rgba(201,161,74,.3)]"
+            className="absolute w-6 h-6 -ml-3 -mt-3 rounded-full bg-rasp border-4 border-white shadow-[0_1px_4px_rgba(35,39,47,.4)]"
           />
         ),
       )}
@@ -168,23 +176,23 @@ export function PhotoStage({
 }
 
 /** A round magnified view of the photo around `point`, with a red cross. */
-export function Loupe({ src, point, box, size }: { src: string; point: Point; box: { width: number; height: number }; size: number }) {
+export function Loupe({ src, point, box, size, ring = 'white' }: { src: string; point: Point; box: { width: number; height: number }; size: number; ring?: 'white' | 'ink' }) {
   const style: CSSProperties = {
     width: size,
     height: size,
     backgroundImage: `url("${src}")`,
     backgroundRepeat: 'no-repeat',
-    backgroundColor: '#2e2f31',
+    backgroundColor: '#23272f',
     backgroundSize: `${box.width * ZOOM}px ${box.height * ZOOM}px`,
     backgroundPosition: `${size / 2 - point.x * box.width * ZOOM}px ${size / 2 - point.y * box.height * ZOOM}px`,
   };
   return (
     <div className="relative" style={{ width: size, height: size }}>
-      <div className="rounded-full border-[5px] border-white shadow-[0_6px_18px_rgba(0,0,0,.35)] overflow-hidden relative" style={style}>
-        <span className="absolute left-1/2 top-[22%] bottom-[22%] w-[2px] -ml-px bg-[#e5342a]" />
-        <span className="absolute top-1/2 left-[22%] right-[22%] h-[2px] -mt-px bg-[#e5342a]" />
+      <div className={`rounded-full border-[5px] overflow-hidden relative ${ring === 'ink' ? 'border-ink' : 'border-white shadow-[0_10px_24px_rgba(35,39,47,.35)]'}`} style={style}>
+        <span className="absolute left-1/2 top-[22%] bottom-[22%] w-[2px] -ml-px bg-[#e5484d]" />
+        <span className="absolute top-1/2 left-[22%] right-[22%] h-[2px] -mt-px bg-[#e5484d]" />
       </div>
-      <span className="absolute -right-1 -bottom-1 rounded-full bg-burgundy text-cream border-[3px] border-white flex items-center justify-center" style={{ width: size * 0.22, height: size * 0.22 }}>
+      <span className="absolute right-0 bottom-0 rounded-full bg-ink text-white border-[3px] border-white flex items-center justify-center" style={{ width: size * 0.23, height: size * 0.23 }}>
         <MagnifierIcon className="w-1/2 h-1/2" />
       </span>
     </div>
@@ -200,37 +208,27 @@ export type TurnProps = {
   onEnhance: (on: boolean) => void;
 };
 
-/** Turn left / Turn right, and the AI's "looks sideways" hint when there is one. */
+/** Turn left / Turn right and Brighten colors, and the AI's "looks sideways" hint when there is one. */
 function TurnBar({ onTurn, turning, enhance, onEnhance, suggestedTurns, disabled }: TurnProps & { suggestedTurns?: Turns | null; disabled?: boolean }) {
   const off = turning || disabled;
   return (
     <div className="flex flex-col gap-2.5">
       {suggestedTurns ? (
-        <div className="flex flex-col gap-2 bg-card border-2 border-burgundy rounded-[12px] px-3.5 py-2.5">
-          <p className="text-[17px]">{suggestedTurns === 2 ? 'This painting looks upside down.' : 'This painting looks like it is on its side.'}</p>
+        <div className="flex flex-col gap-2 bg-need-bg text-need rounded-[16px] p-3.5">
+          <p className="text-[16px] font-bold">{suggestedTurns === 2 ? 'This painting looks upside down.' : 'This painting looks like it is on its side.'}</p>
           <Button size="sm" disabled={off} onClick={() => onTurn(suggestedTurns === 3 ? -1 : suggestedTurns)}>
             Turn it the right way up
           </Button>
         </div>
       ) : null}
-      <div className="flex justify-center items-center gap-3">
-        {([
-          [-1, 'Turn left', RotateLeftIcon],
-          [1, 'Turn right', RotateRightIcon],
-        ] as const).map(([by, label, Icon]) => (
-          <button
-            key={by}
-            type="button"
-            aria-label={label}
-            title={label}
-            disabled={off}
-            onClick={() => onTurn(by)}
-            className="w-12 h-12 rounded-[12px] border-2 border-burgundy bg-card-on text-burgundy flex items-center justify-center cursor-pointer hover:bg-soft disabled:opacity-60 disabled:cursor-default"
-          >
-            <Icon className="w-6 h-6" />
-          </button>
-        ))}
-        <EnhanceSwitch className="h-12 !border-burgundy" on={enhance} onChange={onEnhance} disabled={off} />
+      <div className="flex items-center gap-2">
+        <IconButton label="Turn left" tone="wall" size={54} disabled={off} onClick={() => onTurn(-1)}>
+          <RotateLeftIcon className="w-[22px] h-[22px]" />
+        </IconButton>
+        <IconButton label="Turn right" tone="wall" size={54} disabled={off} onClick={() => onTurn(1)}>
+          <RotateRightIcon className="w-[22px] h-[22px]" />
+        </IconButton>
+        <EnhanceSwitch className="flex-1 !px-3.5" on={enhance} onChange={onEnhance} disabled={off} />
       </div>
     </div>
   );
@@ -253,29 +251,49 @@ export type FoundProps = TurnProps & {
   busy: boolean;
 };
 
-/** "Found it": the gold outline, to approve or adjust. */
+const page = 'flex flex-col lg:flex-row gap-5 items-center lg:items-stretch justify-center px-4 sm:px-10 pb-10 max-w-[1280px] mx-auto w-full';
+const side = 'w-full max-w-[600px] lg:max-w-none lg:flex-1 lg:min-w-[340px] lg:basis-0 bg-card rounded-[28px] p-6 sm:p-8 flex flex-col gap-4';
+
+/** "Found it": the outline the app found, to approve or adjust. */
 export function FoundView({ src, name, corners, unsure, hasFrame, includeFrame, onIncludeFrame, onAccept, onAdjust, onBack, backLabel, busy, suggestedTurns, onTurn, turning, enhance, onEnhance }: FoundProps) {
   return (
-    <main className="flex flex-col gap-4 px-4 sm:px-10 py-5 max-w-[1240px] mx-auto w-full">
-      <BackLink onClick={onBack}>{backLabel}</BackLink>
-      <div className="flex flex-col lg:flex-row gap-5 lg:gap-10 items-center lg:items-start justify-center">
-        <Square>{(fit) => <PhotoStage src={src} alt={`Your photo: ${name}`} corners={corners} imgMaxHeight={fit} />}</Square>
-        <div className="flex flex-col gap-4 w-full max-w-[360px] lg:w-[340px] flex-none lg:pt-6">
-          <h1 className="text-[30px] sm:text-[38px]">{unsure ? 'Is this right?' : 'Found it.'}</h1>
-          <p className="text-[19px] sm:text-[22px]">
-            {unsure
-              ? 'This photo was a tricky one. The gold line is my best guess at the edges of your painting.'
-              : 'The gold line shows the edges of your painting. Everything outside it will be trimmed away.'}
-          </p>
-          <TurnBar onTurn={onTurn} turning={turning} enhance={enhance} onEnhance={onEnhance} suggestedTurns={suggestedTurns} disabled={busy} />
-          {hasFrame && <Switch label="Include the frame" checked={includeFrame} onChange={onIncludeFrame} />}
-          <Button onClick={onAccept} busy={busy} disabled={turning}>
-            Looks right
-          </Button>
-          <Button variant="outline" onClick={onAdjust} disabled={busy}>
-            Move the corners myself
-          </Button>
-        </div>
+    <main className={page}>
+      <Square>{(fit) => <PhotoStage src={src} alt={`Your photo: ${name}`} corners={corners} imgMaxHeight={fit} shade />}</Square>
+      <div className={side}>
+        <BackLink onClick={onBack}>{backLabel}</BackLink>
+        {unsure ? (
+          <Chip tone="need" className="self-start">Please check this one</Chip>
+        ) : (
+          <Chip tone="ok" className="self-start">
+            <CheckIcon className="w-3.5 h-3.5" /> Painting found
+          </Chip>
+        )}
+        <h1 className="text-[34px] sm:text-[44px] leading-[1.05]">{unsure ? 'Is this right?' : 'Found it.'}</h1>
+        <p className="text-[18px] text-muted">
+          {unsure
+            ? 'This photo was a tricky one. The line is my best guess at the edges of your painting.'
+            : 'The line shows the edges of your painting. Everything in the shaded part will be trimmed away.'}
+        </p>
+        <div className="flex-1 min-h-2" />
+        <TurnBar onTurn={onTurn} turning={turning} enhance={enhance} onEnhance={onEnhance} suggestedTurns={suggestedTurns} disabled={busy} />
+        {hasFrame && (
+          <Switch
+            label={
+              <>
+                <FrameIcon className="w-5 h-5 flex-none" />
+                Include the frame
+              </>
+            }
+            checked={includeFrame}
+            onChange={onIncludeFrame}
+          />
+        )}
+        <Button onClick={onAccept} busy={busy} disabled={turning}>
+          Looks right
+        </Button>
+        <Button variant="outline" onClick={onAdjust} disabled={busy}>
+          Move the corners myself
+        </Button>
       </div>
     </main>
   );
@@ -320,56 +338,52 @@ export function AdjustView({ src, name, corners, onChange, onDone, onBack, backL
   }
 
   return (
-    <main className="flex flex-col gap-4 px-4 sm:px-10 py-5 max-w-[1240px] mx-auto w-full">
-      <BackLink onClick={onBack}>{backLabel}</BackLink>
-      <div className="flex flex-col lg:flex-row gap-4 lg:gap-10 items-center justify-center">
-        <h1 className="text-[22px] sm:text-[26px] text-center lg:hidden">Drag each numbered circle onto a corner of the painting.</h1>
-        <Square>
-          {(fit) => (
-        <div ref={measureRef} className="max-w-full">
-          <PhotoStage
-            imgMaxHeight={fit}
-            src={src}
-            alt={`Your photo: ${name}`}
-            corners={corners}
-            active={active}
-            onActive={(i) => setActive(i)}
-            floatingLoupe={magnifier}
-            onMove={(i, p) => {
-              setCrossed(false);
-              const next = corners.map((c, k) => (k === i ? p : c)) as Quad;
-              onChange(next);
-            }}
-          />
-        </div>
-          )}
-        </Square>
-        <div className="flex flex-col items-center gap-3.5 w-full max-w-[360px] lg:w-[340px] flex-none">
-          <h1 className="text-[26px] text-center hidden lg:block">Drag each numbered circle onto a corner of the painting.</h1>
-          {notice && (
-            <p role="status" className="text-[18px] text-center bg-need-bg text-need rounded-[12px] px-4 py-2.5 font-sans">
-              {notice}
-            </p>
-          )}
-          {magnifier && box.width > 0 && (
-            <div className="hidden lg:flex flex-col items-center gap-2.5">
-              <Loupe src={src} point={corners[active]} box={box} size={200} />
-              <p className="italic text-muted text-[18px]">Put the red cross right on the corner.</p>
-            </div>
-          )}
-          <Switch label="Magnifier" checked={magnifier} onChange={setMagnifier} className="self-stretch" />
-          <div className="self-stretch">
-            <TurnBar onTurn={onTurn} turning={turning} enhance={enhance} onEnhance={onEnhance} disabled={busy} />
+    <main className={page}>
+      <Square>
+        {(fit) => (
+          <div ref={measureRef} className="max-w-full">
+            <PhotoStage
+              imgMaxHeight={fit}
+              src={src}
+              alt={`Your photo: ${name}`}
+              corners={corners}
+              active={active}
+              onActive={(i) => setActive(i)}
+              floatingLoupe={magnifier}
+              onMove={(i, p) => {
+                setCrossed(false);
+                const next = corners.map((c, k) => (k === i ? p : c)) as Quad;
+                onChange(next);
+              }}
+            />
           </div>
-          {crossed && (
-            <p role="alert" className="text-[18px] text-center text-burgundy font-semibold">
-              The circles are crossed over. Put one circle on each corner of the painting.
-            </p>
-          )}
-          <Button onClick={done} busy={busy} disabled={turning} className="self-stretch">
-            Done
-          </Button>
-        </div>
+        )}
+      </Square>
+      <div className={side}>
+        <BackLink onClick={onBack}>{backLabel}</BackLink>
+        <h1 className="text-[26px] sm:text-[30px] leading-[1.15]">Drag each numbered circle onto a corner of the painting.</h1>
+        {notice && (
+          <p role="status" className="text-[16px] font-bold bg-need-bg text-need rounded-[16px] px-4 py-3">
+            {notice}
+          </p>
+        )}
+        {magnifier && box.width > 0 && (
+          <div className="hidden lg:flex flex-col items-center gap-3">
+            <Loupe src={src} point={corners[active]} box={box} size={190} ring="ink" />
+            <p className="text-muted text-[16px]">Put the red cross right on the corner.</p>
+          </div>
+        )}
+        <Switch label="Magnifier" checked={magnifier} onChange={setMagnifier} />
+        <TurnBar onTurn={onTurn} turning={turning} enhance={enhance} onEnhance={onEnhance} disabled={busy} />
+        <div className="flex-1 min-h-2" />
+        {crossed && (
+          <p role="alert" className="text-[16px] text-alert font-bold">
+            The circles are crossed over. Put one circle on each corner of the painting.
+          </p>
+        )}
+        <Button onClick={done} busy={busy} disabled={turning}>
+          Done
+        </Button>
       </div>
     </main>
   );
@@ -378,14 +392,14 @@ export function AdjustView({ src, name, corners, onChange, onDone, onBack, backL
 /** Shown while the app looks for the corners. */
 export function FindingView({ src, name }: { src: string; name: string }) {
   return (
-    <main className="flex flex-col items-center gap-5 px-4 py-8">
+    <main className="flex flex-col items-center gap-5 px-4 pb-10">
       <h1 className="flex items-center gap-3 text-[28px] sm:text-[34px]" role="status">
-        <span className="gs-spinner text-burgundy" aria-hidden /> Finding the corners…
+        <span className="gs-spinner" aria-hidden /> Finding the corners…
       </h1>
       <Square>
         {(fit) => (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={src} alt={`Your photo: ${name}`} className="max-w-full max-h-full rounded-[3px] opacity-80" style={fit ? { maxHeight: fit } : undefined} />
+          <img src={src} alt={`Your photo: ${name}`} className="max-w-full max-h-full rounded-[12px] opacity-80" style={fit ? { maxHeight: fit } : undefined} />
         )}
       </Square>
     </main>

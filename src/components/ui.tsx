@@ -86,6 +86,67 @@ export const FramedPictureIcon = ({ className }: IconProps) => (
   </svg>
 );
 
+export const ArrowLeftIcon = ({ className }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden {...stroke} strokeWidth={2.4}>
+    <path d="M19 12H5M11 6l-6 6 6 6" />
+  </svg>
+);
+export const ArrowRightIcon = ({ className }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden {...stroke} strokeWidth={2.4}>
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  </svg>
+);
+export const UploadIcon = ({ className }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden {...stroke} strokeWidth={2}>
+    <path d="M12 16V5M7 10l5-5 5 5M5 20h14" />
+  </svg>
+);
+export const SettingsIcon = ({ className }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden {...stroke} strokeWidth={2}>
+    <path d="M4 7h9M19 7h1M4 17h1M11 17h9" />
+    <circle cx="16" cy="7" r="2.5" />
+    <circle cx="8" cy="17" r="2.5" />
+  </svg>
+);
+export const CloseIcon = ({ className }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden {...stroke} strokeWidth={2.4}>
+    <path d="M6 6l12 12M18 6L6 18" />
+  </svg>
+);
+export const FrameIcon = ({ className }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden {...stroke} strokeWidth={2}>
+    <path d="M3 4h18v16H3zM7 8h10v8H7z" />
+  </svg>
+);
+/** The Google Photos pinwheel, on a white disc so its colours stay true on a dark button. */
+export const GooglePhotosIcon = ({ className = '' }: IconProps) => (
+  <span className={`flex-none rounded-full bg-white flex items-center justify-center ${className}`} aria-hidden>
+    <svg viewBox="0 0 24 24" className="w-[66%] h-[66%]">
+      <path d="M12 1A5.5 5.5 0 0 0 12 12Z" fill="#EA4335" />
+      <path d="M23 12A5.5 5.5 0 0 0 12 12Z" fill="#4285F4" />
+      <path d="M12 23A5.5 5.5 0 0 0 12 12Z" fill="#34A853" />
+      <path d="M1 12A5.5 5.5 0 0 0 12 12Z" fill="#FBBC04" />
+    </svg>
+  </span>
+);
+
+/** The logo: a dark tile with crop corners, bold "Gallery" and a light italic "Snap". */
+export function Logo({ onClick, small = false }: { onClick: () => void; small?: boolean }) {
+  return (
+    <button type="button" onClick={onClick} aria-label="GallerySnap, start over" className={`flex items-center gap-2.5 tracking-[-0.02em] cursor-pointer ${small ? 'text-[21px]' : 'text-[22px]'}`}>
+      <span className={`flex-none bg-ink text-white flex items-center justify-center ${small ? 'w-9 h-9 rounded-[11px]' : 'w-[38px] h-[38px] rounded-[12px]'}`}>
+        <svg viewBox="0 0 24 24" className="w-[58%] h-[58%]" aria-hidden {...stroke} strokeWidth={2.4}>
+          <path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" />
+        </svg>
+      </span>
+      <span>
+        <span className="font-extrabold">Gallery</span>
+        <span className="font-normal italic text-rasp">Snap</span>
+      </span>
+    </button>
+  );
+}
+
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'solid' | 'outline';
   size?: 'lg' | 'md' | 'sm';
@@ -93,43 +154,68 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const sizes = {
-  lg: 'text-[21px] sm:text-[22px] px-6 py-4 rounded-[14px] min-h-[60px]',
-  md: 'text-[19px] px-5 py-3 rounded-[12px] min-h-[52px]',
-  sm: 'text-[16px] px-3.5 py-2 rounded-[10px] min-h-[42px]',
+  lg: 'text-[19px] px-7 rounded-[18px] min-h-[64px]',
+  md: 'text-[18px] px-7 rounded-[18px] min-h-[58px]',
+  sm: 'text-[16px] px-4 rounded-[14px] min-h-[48px]',
 };
 
-/** Flat, rounded, no shadow. Burgundy fill, or a burgundy outline. */
+/** Flat and rounded. Inky grey fill, or white with a quiet outline. */
 export function Button({ variant = 'solid', size = 'lg', busy = false, className = '', children, disabled, ...rest }: ButtonProps) {
-  const look =
-    variant === 'solid'
-      ? 'bg-burgundy text-cream border-burgundy hover:bg-burgundy-dk hover:border-burgundy-dk'
-      : 'bg-card-on text-burgundy border-burgundy hover:bg-soft';
+  const look = variant === 'solid' ? 'bg-ink text-white border-ink hover:bg-ink-dk hover:border-ink-dk' : 'bg-card text-ink border-line hover:border-ink';
   return (
     <button
       type="button"
       {...rest}
       disabled={disabled || busy}
       aria-busy={busy || undefined}
-      className={`inline-flex items-center justify-center gap-3 border-2 font-sans font-bold leading-tight cursor-pointer transition-colors disabled:cursor-default disabled:opacity-60 ${sizes[size]} ${look} ${className}`}
+      className={`inline-flex items-center justify-center gap-2.5 border-2 font-bold leading-tight cursor-pointer transition-colors disabled:cursor-default disabled:opacity-60 ${sizes[size]} ${look} ${className}`}
     >
       {/* Children sit in their own span so the spinner appearing doesn't trip up
           React when a browser extension (e.g. page translation) has changed the
           button's text. */}
       {busy ? <span className="gs-spinner" aria-hidden /> : null}
-      <span className="inline-flex items-center justify-center gap-3">{children}</span>
+      <span className="inline-flex items-center justify-center gap-2.5">{children}</span>
+    </button>
+  );
+}
+
+/** A white pill, for the quiet buttons in the header. */
+export function PillButton({ className = '', children, ...rest }: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button type="button" {...rest} className={`h-[46px] px-5 rounded-full bg-card text-ink font-bold text-[16px] inline-flex items-center gap-2 cursor-pointer hover:bg-white hover:shadow-[0_0_0_2px_var(--color-ink)] disabled:opacity-60 disabled:cursor-default ${className}`}>
+      {children}
+    </button>
+  );
+}
+
+/** A plain bold text button, used where a link would sit. */
+export function TextButton({ className = '', children, ...rest }: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button type="button" {...rest} className={`font-bold text-ink cursor-pointer hover:text-rasp disabled:opacity-60 disabled:cursor-default ${className}`}>
+      {children}
     </button>
   );
 }
 
 export function BackLink({ onClick, children }: { onClick: () => void; children: ReactNode }) {
   return (
-    <button type="button" onClick={onClick} className="font-sans font-bold text-[17px] text-burgundy cursor-pointer hover:underline py-2 -my-2 self-start">
-      <span aria-hidden>← </span>
+    <TextButton onClick={onClick} className="text-[15px] inline-flex items-center gap-1.5 min-h-[28px] self-start">
+      <ArrowLeftIcon className="w-4 h-4" />
       {children}
-    </button>
+    </TextButton>
   );
 }
 
+/** The on/off track every switch uses. */
+function Track({ on, small = false }: { on: boolean; small?: boolean }) {
+  return (
+    <span aria-hidden className={`flex-none rounded-full flex items-center p-[3px] transition-colors ${small ? 'w-[46px] h-7' : 'w-[50px] h-[30px]'} ${on ? 'bg-ink justify-end' : 'bg-track justify-start'}`}>
+      <span className={`rounded-full bg-white ${small ? 'w-[22px] h-[22px]' : 'w-6 h-6'}`} />
+    </span>
+  );
+}
+
+/** A labelled on/off switch on a soft grey bar (desktop side panels). */
 export function Switch({ label, checked, onChange, disabled, className = '' }: { label: ReactNode; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; className?: string }) {
   return (
     <button
@@ -138,125 +224,115 @@ export function Switch({ label, checked, onChange, disabled, className = '' }: {
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`flex items-center justify-between gap-4 cursor-pointer disabled:opacity-60 disabled:cursor-default font-sans font-bold text-[18px] text-ink px-4 py-2.5 border-2 border-line rounded-[12px] bg-card ${className}`}
+      className={`flex items-center justify-between gap-3 min-h-[54px] px-4 rounded-[16px] bg-wall font-bold text-[16px] text-ink text-left cursor-pointer disabled:opacity-60 disabled:cursor-default ${className}`}
     >
-      <span>{label}</span>
-      <span className={`relative w-[52px] h-[30px] rounded-full flex-none transition-colors ${checked ? 'bg-burgundy' : 'bg-[#bdb3a3]'}`}>
-        <span className={`absolute top-[3px] w-6 h-6 rounded-full bg-white transition-[left] ${checked ? 'left-[25px]' : 'left-[3px]'}`} />
-      </span>
+      <span className="flex items-center gap-2">{label}</span>
+      <Track on={checked} small />
     </button>
   );
 }
 
 export type StepName = 'photo' | 'straighten' | 'save';
+const STEPS: { key: StepName; label: string }[] = [
+  { key: 'photo', label: 'Photo' },
+  { key: 'straighten', label: 'Straighten' },
+  { key: 'save', label: 'Save' },
+];
 
-/** `nav` replaces the step names. The start page uses it for its links and upload button. */
-export function Header({ step, count, onHome, nav, className = '' }: { step: StepName; count?: number; onHome: () => void; nav?: ReactNode; className?: string }) {
-  const steps: { key: StepName; label: string; Icon: (p: IconProps) => ReactNode }[] = [
-    { key: 'photo', label: 'Photo', Icon: PhotoIcon },
-    { key: 'straighten', label: 'Straighten', Icon: StraightenIcon },
-    { key: 'save', label: 'Save', Icon: DownloadIcon },
-  ];
+/** Photo, Straighten, Save as three pills: done ones get a tick, the current one is dark. */
+function StepPills({ step }: { step: StepName }) {
+  const at = STEPS.findIndex((s) => s.key === step);
   return (
-    <header className={`flex items-center justify-between gap-4 px-4 sm:px-10 h-[60px] sm:h-[68px] border-b border-line ${className}`}>
-      <button type="button" onClick={onHome} className="font-serif font-semibold text-[23px] sm:text-[26px] tracking-[-0.01em] cursor-pointer" aria-label="GallerySnap, start over">
-        Gallery<em className="italic text-burgundy">Snap</em>
-      </button>
-      {nav ? (
-        nav
-      ) : count && count > 1 ? (
-        <p className="text-[18px] text-muted">{count} paintings</p>
-      ) : (
-        <ol className="flex gap-3 sm:gap-6 text-[15px] sm:text-[18px] text-muted" aria-label="Steps">
-          {steps.map(({ key, label, Icon }) => (
-            <li
-              key={key}
-              aria-current={key === step ? 'step' : undefined}
-              className={`inline-flex items-center gap-1.5 pb-1 border-b-[3px] ${key === step ? 'text-ink font-bold border-burgundy' : 'border-transparent'}`}
-            >
-              <Icon className={`w-[20px] h-[20px] hidden min-[420px]:block ${key === step ? 'text-burgundy' : ''}`} />
-              {label}
-            </li>
-          ))}
-        </ol>
-      )}
+    <ol className="flex items-center gap-2.5 text-[15px] font-bold" aria-label="Steps">
+      {STEPS.map(({ key, label }, i) => (
+        <li key={key} className="flex items-center gap-2.5" aria-current={i === at ? 'step' : undefined}>
+          {i > 0 && <span className="w-5 h-0.5 bg-track/70 max-md:hidden" aria-hidden />}
+          <span className={`flex items-center gap-2 py-2 pl-2 pr-3.5 rounded-full ${i === at ? 'bg-ink text-white' : 'bg-card text-muted'}`}>
+            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[13px] ${i === at ? 'bg-white/20' : i < at ? 'bg-tile text-ink' : 'bg-wall'}`}>
+              {i < at ? <CheckIcon className="w-3.5 h-3.5" /> : i + 1}
+            </span>
+            {label}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** The desktop header: logo, the steps (or a count of paintings), and whatever goes on the right. */
+export function Header({ step, count, onHome, showSteps = true, right, className = '' }: { step: StepName; count?: number; onHome: () => void; showSteps?: boolean; right?: ReactNode; className?: string }) {
+  return (
+    <header className={`w-full ${className}`}>
+      <div className="max-w-[1280px] mx-auto flex flex-wrap items-center justify-between gap-4 px-10 py-5">
+        <Logo onClick={onHome} />
+        {!showSteps ? null : count && count > 1 ? (
+          <p className="py-2.5 px-[18px] rounded-full bg-card text-[15px] font-bold text-muted">{count} paintings</p>
+        ) : (
+          <StepPills step={step} />
+        )}
+        {right}
+      </div>
     </header>
   );
 }
 
 /** Height of PhoneHeader, for sizing phone screens to fit without scrolling. */
-export const PHONE_HEADER = 68;
+export const PHONE_HEADER = 64;
 
 /**
- * The phone header: a back arrow, the logo, an optional tool on the right,
- * and a thin three-part progress bar instead of the step names.
+ * The phone header. On the start screen: the logo and whatever goes on the
+ * right. After that: a back button, a three-part progress bar (or a count of
+ * paintings), and an optional tool on the right.
  */
-export function PhoneHeader({
-  step,
-  onHome,
-  onBack,
-  right,
-  className = '',
-}: {
-  step: StepName;
-  onHome: () => void;
-  onBack?: () => void;
-  right?: ReactNode;
-  className?: string;
-}) {
+export function PhoneHeader({ step, count, onHome, onBack, right, className = '' }: { step: StepName; count?: number; onHome: () => void; onBack?: () => void; right?: ReactNode; className?: string }) {
   const at = { photo: 1, straighten: 2, save: 3 }[step];
-  const side = 'w-10 h-10 flex-none';
   return (
-    <header className={`flex-none px-4 pt-2.5 ${className}`} style={{ height: PHONE_HEADER }}>
-      <div className="h-[54px] flex items-center justify-between gap-2">
-        {onBack ? (
-          <button type="button" onClick={onBack} aria-label="Back" className={`${side} rounded-[12px] flex items-center justify-center text-burgundy cursor-pointer`}>
-            <ChevronLeftIcon className="w-6 h-6" />
-          </button>
-        ) : null}
-        <button type="button" onClick={onHome} className="font-serif font-semibold text-[22px] tracking-[-0.01em] cursor-pointer" aria-label="GallerySnap, start over">
-          Gallery<em className="italic text-burgundy">Snap</em>
-        </button>
-        {right ?? (onBack ? <span className={side} /> : <span className="flex-1" />)}
-      </div>
-      <div className="grid grid-cols-3 gap-1.5" role="img" aria-label={`Step ${at} of 3`}>
-        {[1, 2, 3].map((i) => (
-          <i key={i} className={`h-1 rounded-sm ${i <= at ? 'bg-burgundy' : 'bg-line'}`} />
-        ))}
-      </div>
+    <header className={`flex-none px-4 flex items-center justify-between gap-2 ${className}`} style={{ height: PHONE_HEADER }}>
+      {step === 'photo' ? (
+        <>
+          <Logo onClick={onHome} small />
+          {right}
+        </>
+      ) : (
+        <>
+          <IconButton label={onBack ? 'Back' : 'Start over'} onClick={onBack ?? onHome}>
+            <ChevronLeftIcon className="w-5 h-5" />
+          </IconButton>
+          {count && count > 1 ? (
+            <p className="py-2 px-4 rounded-full bg-card text-[14px] font-bold text-muted">{count} paintings</p>
+          ) : (
+            <div className="flex gap-1.5" role="img" aria-label={`Step ${at} of 3`}>
+              {[1, 2, 3].map((i) => (
+                <i key={i} className={`w-[26px] h-1.5 rounded-full ${i <= at ? 'bg-ink' : 'bg-track/70'}`} />
+              ))}
+            </div>
+          )}
+          {right ?? <span className="w-11 flex-none" />}
+        </>
+      )}
     </header>
   );
 }
 
-/** The on/off track used by the phone switch rows. */
-function Track({ on }: { on: boolean }) {
-  return (
-    <span aria-hidden className={`relative w-[52px] h-[32px] rounded-full flex-none transition-colors ${on ? 'bg-burgundy' : 'bg-line'}`}>
-      <span className={`absolute top-[3px] w-[26px] h-[26px] rounded-full bg-card-on shadow-[0_1px_3px_rgba(46,47,49,.25)] transition-[left] ${on ? 'left-[23px]' : 'left-[3px]'}`} />
-    </span>
-  );
-}
-
-/** Enhance: a wand and an on/off switch, sized to sit in line with the turn buttons. */
+/** Brighten colors: a wand, the words (where there's room) and an on/off switch. */
 export function EnhanceSwitch({ on, onChange, disabled, className = '' }: { on: boolean; onChange: (v: boolean) => void; disabled?: boolean; className?: string }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      aria-label="Enhance colors"
-      title="Enhance colors"
+    <Switch
+      className={className}
+      checked={on}
+      onChange={onChange}
       disabled={disabled}
-      onClick={() => onChange(!on)}
-      className={`inline-flex items-center gap-2 pl-2.5 pr-1.5 rounded-[12px] border-2 border-line bg-card-on text-burgundy cursor-pointer disabled:opacity-60 disabled:cursor-default ${className}`}
-    >
-      <WandIcon className="w-[22px] h-[22px] flex-none" />
-      <Track on={on} />
-    </button>
+      label={
+        <>
+          <WandIcon className="w-5 h-5 flex-none" />
+          Brighten colors
+        </>
+      }
+    />
   );
 }
 
-/** A phone on/off row: optional icon tile, a title, an optional caption and a switch. */
+/** An on/off row: optional icon, a title, an optional caption and a switch. */
 export function SwitchRow({ title, caption, icon, checked, onChange, disabled, className = '' }: { title: string; caption?: string; icon?: ReactNode; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; className?: string }) {
   return (
     <button
@@ -265,32 +341,38 @@ export function SwitchRow({ title, caption, icon, checked, onChange, disabled, c
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`w-full flex items-center gap-3.5 text-left cursor-pointer disabled:opacity-60 disabled:cursor-default font-sans text-ink ${className}`}
+      className={`w-full flex items-center gap-3 text-left cursor-pointer disabled:opacity-60 disabled:cursor-default text-ink ${className}`}
     >
-      {icon && <span className="flex-none w-10 h-10 rounded-[12px] bg-soft text-burgundy flex items-center justify-center">{icon}</span>}
+      {icon && <span className="flex-none text-ink flex items-center justify-center">{icon}</span>}
       <span className="flex-1 min-w-0">
-        <b className="block text-[17px] leading-tight">{title}</b>
-        {caption && <span className="block text-[14px] text-muted mt-0.5 leading-snug">{caption}</span>}
+        <b className="block text-[16px] font-bold leading-tight">{title}</b>
+        {caption && <span className="block text-[14.5px] text-muted mt-0.5 leading-snug">{caption}</span>}
       </span>
       <Track on={checked} />
     </button>
   );
 }
 
-/** A small square icon button for the phone screens. */
-export function IconButton({ label, onClick, disabled, pressed, children }: { label: string; onClick: () => void; disabled?: boolean; pressed?: boolean; children: ReactNode }) {
+/** A square white icon button. Dark when pressed. */
+export function IconButton({ label, onClick, disabled, pressed, size = 44, tone = 'card', children }: { label: string; onClick: () => void; disabled?: boolean; pressed?: boolean; size?: number; tone?: 'card' | 'wall'; children: ReactNode }) {
   return (
     <button
       type="button"
       aria-label={label}
+      title={label}
       aria-pressed={pressed}
       onClick={onClick}
       disabled={disabled}
-      className={`w-[42px] h-[42px] flex-none rounded-[12px] border-2 flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-default ${
-        pressed ? 'bg-burgundy border-burgundy text-cream' : 'border-line text-burgundy bg-card-on'
-      }`}
+      style={{ width: size, height: size }}
+      className={`flex-none rounded-[14px] flex items-center justify-center cursor-pointer disabled:opacity-60 disabled:cursor-default ${pressed ? 'bg-ink text-white' : `${tone === 'card' ? 'bg-card' : 'bg-wall'} text-ink hover:shadow-[0_0_0_2px_var(--color-ink)]`}`}
     >
       {children}
     </button>
   );
+}
+
+/** A small rounded label: green for good news, amber for "needs a look", grey otherwise. */
+export function Chip({ tone = 'plain', className = '', children }: { tone?: 'ok' | 'need' | 'plain'; className?: string; children: ReactNode }) {
+  const look = { ok: 'bg-ok-bg text-ok', need: 'bg-need-bg text-need', plain: 'bg-tile text-ink' }[tone];
+  return <span className={`inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-[14px] font-bold ${look} ${className}`}>{children}</span>;
 }

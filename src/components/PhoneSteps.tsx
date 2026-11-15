@@ -12,15 +12,16 @@ import { ALBUM_TITLE } from '@/lib/googlePhotos';
 import { SAVE_LABEL, SAVED_TEXT, useSaveTarget } from '@/lib/saveTarget';
 import type { Painting } from '@/lib/types';
 import type { SaveStatus } from './SaveStep';
-import { PhotoStage, type AdjustProps, type FoundProps, type TurnProps } from './StraightenStep';
-import { Button, DownloadIcon, IconButton, PHONE_HEADER, PhotoIcon, RotateLeftIcon, RotateRightIcon, SwitchRow, EnhanceSwitch } from './ui';
+import { PhotoStage, type AdjustProps, type FoundProps } from './StraightenStep';
+import { Button, Chip, DownloadIcon, FrameIcon, GooglePhotosIcon, IconButton, PHONE_HEADER, RotateLeftIcon, RotateRightIcon, SwitchRow, TextButton, WandIcon } from './ui';
 
-const big = 'w-full !min-h-0 h-14 !text-[18px] !rounded-[14px] !px-4';
+const big = 'w-full !min-h-[62px]';
+const CARD_PAD = 12;
 
 /** A full-height phone screen. */
 function Screen({ children }: { children: ReactNode }) {
   return (
-    <main className="flex flex-col gap-4 px-5 pt-4 pb-5" style={{ height: `calc(100dvh - ${PHONE_HEADER}px)` }}>
+    <main className="flex flex-col gap-3.5 px-4 pt-1 pb-5" style={{ height: `calc(100dvh - ${PHONE_HEADER}px)` }}>
       {children}
     </main>
   );
@@ -33,49 +34,59 @@ function useFill() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setHeight(el.clientHeight));
+    const ro = new ResizeObserver(() => setHeight(Math.max(0, el.clientHeight - 2 * CARD_PAD)));
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
   return { ref, height };
 }
 
+/** The white card the photo sits on. It takes whatever height is left. */
 function Fill({ fillRef, height, children }: { fillRef: RefObject<HTMLDivElement | null>; height: number; children: ReactNode }) {
   return (
-    <div ref={fillRef} className="flex-1 min-h-0 flex items-center justify-center">
+    <div ref={fillRef} className="flex-1 min-h-0 bg-card rounded-[24px] flex items-center justify-center" style={{ padding: CARD_PAD }}>
       {height > 0 ? children : null}
     </div>
   );
 }
 
-/** The tidy panel under the photo: the turn icons and the Enhance switch in one row, then the frame switch when there is a frame. */
-function Controls({ onTurn, turning, enhance, onEnhance, disabled, frame }: TurnProps & { disabled?: boolean; frame?: { on: boolean; onChange: (v: boolean) => void } }) {
+/** The headline with the two turn buttons beside it. */
+function Heading({ children, onTurn, turning, disabled }: { children: ReactNode; onTurn: (by: number) => void; turning: boolean; disabled?: boolean }) {
   return (
-    <div className="bg-card-on border-[1.5px] border-line rounded-[14px] flex flex-col">
-      <div className="flex items-center gap-2 px-3.5 py-2">
-        <IconButton label="Turn left" onClick={() => onTurn(-1)} disabled={turning || disabled}>
+    <div className="flex items-center justify-between gap-3">
+      <h1 className="text-[25px] leading-[1.12]">{children}</h1>
+      <div className="flex gap-2 flex-none">
+        <IconButton label="Turn left" size={48} onClick={() => onTurn(-1)} disabled={turning || disabled}>
           <RotateLeftIcon className="w-[22px] h-[22px]" />
         </IconButton>
-        <IconButton label="Turn right" onClick={() => onTurn(1)} disabled={turning || disabled}>
+        <IconButton label="Turn right" size={48} onClick={() => onTurn(1)} disabled={turning || disabled}>
           <RotateRightIcon className="w-[22px] h-[22px]" />
         </IconButton>
-        <EnhanceSwitch className="h-[42px]" on={enhance} onChange={onEnhance} disabled={turning || disabled} />
       </div>
+    </div>
+  );
+}
+
+/** The white card of on/off switches under the photo. */
+function Switches({ enhance, onEnhance, disabled, frame }: { enhance: boolean; onEnhance: (v: boolean) => void; disabled?: boolean; frame?: { on: boolean; onChange: (v: boolean) => void } }) {
+  return (
+    <div className="bg-card rounded-[20px] px-4 flex flex-col">
       {frame && (
         <>
-          <div className="h-px bg-line mx-3.5" />
-          <SwitchRow className="px-3.5 py-3" title="Include the frame" checked={frame.on} onChange={frame.onChange} />
+          <SwitchRow className="py-3" icon={<FrameIcon className="w-[22px] h-[22px]" />} title="Include the frame" checked={frame.on} onChange={frame.onChange} disabled={disabled} />
+          <div className="h-px bg-line" />
         </>
       )}
+      <SwitchRow className="py-3" icon={<WandIcon className="w-[22px] h-[22px]" />} title="Brighten colors" checked={enhance} onChange={onEnhance} disabled={disabled} />
     </div>
   );
 }
 
 function TurnHint({ suggestedTurns, onTurn, disabled }: { suggestedTurns: Turns; onTurn: (by: number) => void; disabled: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-3 bg-card border-2 border-burgundy rounded-[12px] pl-3.5 pr-1.5 py-1.5 text-[16px]">
+    <div className="flex items-center justify-between gap-3 bg-need-bg text-need rounded-[16px] pl-4 pr-1.5 py-1.5 text-[16px] font-bold">
       <span>{suggestedTurns === 2 ? 'Looks upside down.' : 'Looks like it’s on its side.'}</span>
-      <Button size="sm" className="!min-h-[38px] !py-1 whitespace-nowrap" disabled={disabled} onClick={() => onTurn(suggestedTurns === 3 ? -1 : suggestedTurns)}>
+      <Button size="sm" className="!min-h-[40px] whitespace-nowrap" disabled={disabled} onClick={() => onTurn(suggestedTurns === 3 ? -1 : suggestedTurns)}>
         Turn upright
       </Button>
     </div>
@@ -86,26 +97,21 @@ export function PhoneFound({ src, name, corners, unsure, hasFrame, includeFrame,
   const { ref: fillRef, height: fillHeight } = useFill();
   return (
     <Screen>
-      <h1 className="text-[24px]">{unsure ? 'Is this right?' : 'Found it.'}</h1>
+      <Heading onTurn={onTurn} turning={turning} disabled={busy}>
+        {unsure ? 'Is this right?' : 'Found it.'}
+      </Heading>
       {suggestedTurns ? <TurnHint suggestedTurns={suggestedTurns} onTurn={onTurn} disabled={turning || busy} /> : null}
       <Fill fillRef={fillRef} height={fillHeight}>
-        <PhotoStage src={src} alt={`Your photo: ${name}`} corners={corners} imgMaxHeight={fillHeight} />
+        <PhotoStage src={src} alt={`Your photo: ${name}`} corners={corners} imgMaxHeight={fillHeight} shade />
       </Fill>
-      <Controls
-        onTurn={onTurn}
-        turning={turning}
-        enhance={enhance}
-        onEnhance={onEnhance}
-        disabled={busy}
-        frame={hasFrame ? { on: includeFrame, onChange: onIncludeFrame } : undefined}
-      />
+      <Switches enhance={enhance} onEnhance={onEnhance} disabled={busy || turning} frame={hasFrame ? { on: includeFrame, onChange: onIncludeFrame } : undefined} />
       <div className="flex flex-col gap-1">
-        <Button onClick={onAccept} busy={busy} disabled={turning} className={big}>
+        <Button size="md" onClick={onAccept} busy={busy} disabled={turning} className={big}>
           Looks right
         </Button>
-        <button type="button" onClick={onAdjust} disabled={busy} className="font-sans font-bold text-[16px] text-burgundy py-2 cursor-pointer">
-          Adjust corners
-        </button>
+        <TextButton onClick={onAdjust} disabled={busy} className="text-[16px] py-2">
+          Move the corners myself
+        </TextButton>
       </div>
     </Screen>
   );
@@ -127,9 +133,11 @@ export function PhoneAdjust({ src, name, corners, onChange, onDone, notice, busy
 
   return (
     <Screen>
-      <h1 className="text-[22px] leading-tight">Drag each corner into place.</h1>
+      <Heading onTurn={onTurn} turning={turning} disabled={busy}>
+        Drag each corner into place.
+      </Heading>
       {notice && (
-        <p role="status" className="text-[16px] leading-snug bg-need-bg text-need rounded-[12px] px-3.5 py-2 font-sans">
+        <p role="status" className="text-[16px] leading-snug bg-need-bg text-need font-bold rounded-[16px] px-4 py-2.5">
           {notice}
         </p>
       )}
@@ -148,13 +156,15 @@ export function PhoneAdjust({ src, name, corners, onChange, onDone, notice, busy
           }}
         />
       </Fill>
-      {crossed && (
-        <p role="alert" className="text-[16px] text-center text-burgundy font-semibold leading-snug">
-          The circles are crossed over. Put one on each corner.
+      {crossed ? (
+        <p role="alert" className="text-[16px] text-center text-alert font-bold leading-snug">
+          The corners are crossed over. Put one on each corner.
         </p>
+      ) : (
+        <p className="text-[15px] text-center text-muted">Put the red cross right on the corner.</p>
       )}
-      <Controls onTurn={onTurn} turning={turning} enhance={enhance} onEnhance={onEnhance} disabled={busy} />
-      <Button onClick={done} busy={busy} disabled={turning} className={big}>
+      <Switches enhance={enhance} onEnhance={onEnhance} disabled={busy || turning} />
+      <Button size="md" onClick={done} busy={busy} disabled={turning} className={big}>
         Done
       </Button>
     </Screen>
@@ -165,12 +175,12 @@ export function PhoneFinding({ src, name }: { src: string; name: string }) {
   const { ref: fillRef, height: fillHeight } = useFill();
   return (
     <Screen>
-      <h1 className="flex items-center gap-3 text-[24px]" role="status">
-        <span className="gs-spinner text-burgundy" aria-hidden /> Finding the corners…
+      <h1 className="flex items-center gap-3 text-[25px] min-h-[48px]" role="status">
+        <span className="gs-spinner" aria-hidden /> Finding the corners…
       </h1>
       <Fill fillRef={fillRef} height={fillHeight}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={`Your photo: ${name}`} className="max-w-full rounded-[3px] opacity-80" style={{ maxHeight: fillHeight }} />
+        <img src={src} alt={`Your photo: ${name}`} className="max-w-full rounded-[12px] opacity-80" style={{ maxHeight: fillHeight }} />
       </Fill>
     </Screen>
   );
@@ -193,44 +203,45 @@ export function PhoneSave({ painting, status, onGoogle, onDownload, onDimensions
   const working = status.kind === 'working';
   const target = useSaveTarget();
 
+  const tall = 'flex-1 !min-h-[92px] !px-3 !text-[16px] [&>span]:flex-col [&>span]:gap-2';
+
   return (
     <Screen>
-      <h1 className="text-[24px]">All done.</h1>
-      <Fill fillRef={fillRef} height={fillHeight}>
-        {painting.resultUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={painting.resultUrl}
-            alt={`${displayName(painting.name)}, cropped and straightened`}
-            className="max-w-full rounded-[2px] shadow-[0_8px_18px_-10px_rgba(60,40,20,.55)]"
-            style={{ maxHeight: fillHeight }}
-          />
-        )}
-      </Fill>
-      <div aria-live="polite" className="text-center text-[16px] leading-snug empty:hidden">
-        {status.kind === 'working' && <p className="text-muted">{status.what === 'google' ? 'Saving to Google Photos…' : 'Getting your picture ready…'}</p>}
-        {status.kind === 'saved' && (
-          <p className="font-semibold">
-            Saved to your &ldquo;{ALBUM_TITLE}&rdquo; album.{' '}
-            <a href={status.url ?? 'https://photos.google.com/'} target="_blank" rel="noopener noreferrer" className="text-burgundy underline font-sans font-bold">
-              Open it
-            </a>
-          </p>
-        )}
-        {status.kind === 'downloaded' && <p className="font-semibold">{SAVED_TEXT[target](outputFilename(painting.name))}</p>}
-        {status.kind === 'error' && (
-          <p role="alert" className="text-burgundy font-semibold">
-            {status.message}
-          </p>
-        )}
+      <div className="flex-1 min-h-0 bg-card rounded-[24px] p-4 flex flex-col items-center gap-2.5 text-center">
+        <Chip tone="ok">Straightened and cropped</Chip>
+        <div ref={fillRef} className="flex-1 min-h-0 w-full flex items-center justify-center" style={{ padding: CARD_PAD }}>
+          {painting.resultUrl && fillHeight > 0 && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={painting.resultUrl} alt={`${displayName(painting.name)}, cropped and straightened`} className="max-w-full rounded-[8px] shadow-[0_14px_26px_-14px_rgba(35,39,47,.45)]" style={{ maxHeight: fillHeight }} />
+          )}
+        </div>
+        <h1 className="text-[25px]">All done.</h1>
+        <div aria-live="polite" className="text-[16px] leading-snug">
+          {status.kind === 'idle' && <p className="text-muted">Where should it go?</p>}
+          {status.kind === 'working' && <p className="text-muted">{status.what === 'google' ? 'Saving to Google Photos…' : 'Getting your picture ready…'}</p>}
+          {status.kind === 'saved' && (
+            <p className="font-bold">
+              Saved to your &ldquo;{ALBUM_TITLE}&rdquo; album.{' '}
+              <a href={status.url ?? 'https://photos.google.com/'} target="_blank" rel="noopener noreferrer" className="underline">
+                Open it
+              </a>
+            </p>
+          )}
+          {status.kind === 'downloaded' && <p className="font-bold">{SAVED_TEXT[target](outputFilename(painting.name))}</p>}
+          {status.kind === 'error' && (
+            <p role="alert" className="text-alert font-bold">
+              {status.message}
+            </p>
+          )}
+        </div>
       </div>
-      <div className="flex flex-col gap-2.5">
-        <Button onClick={onGoogle} busy={working && status.what === 'google'} disabled={working} className={big}>
-          <PhotoIcon className="w-[22px] h-[22px] flex-none" />
-          Save to Google Photos
+      <div className="flex gap-2.5">
+        <Button size="md" onClick={onGoogle} busy={working && status.what === 'google'} disabled={working} className={tall}>
+          <GooglePhotosIcon className="w-8 h-8 flex-none" />
+          Google Photos
         </Button>
-        <Button onClick={onDownload} busy={working && status.what === 'download'} disabled={working} className={big}>
-          <DownloadIcon className="w-[22px] h-[22px] flex-none" />
+        <Button size="md" onClick={onDownload} busy={working && status.what === 'download'} disabled={working} className={tall}>
+          <DownloadIcon className="w-7 h-7 flex-none" />
           {SAVE_LABEL[target].one}
         </Button>
       </div>
@@ -254,20 +265,20 @@ export function PhoneSave({ painting, status, onGoogle, onDownload, onDimensions
             onChange={(e) => setSizeText(e.target.value)}
             placeholder="Real size, e.g. 16 x 20"
             autoComplete="off"
-            className="flex-1 min-w-0 font-sans text-[16px] px-3 py-2 rounded-[10px] border-2 border-line bg-card-on"
+            className="flex-1 min-w-0 text-[16px] px-3.5 h-12 rounded-[14px] border-2 border-line bg-card"
           />
           <Button size="sm" variant="outline" type="submit" disabled={sizeBad || working}>
             Use
           </Button>
         </form>
       ) : (
-        <div className="flex justify-between font-sans font-bold text-[16px] text-burgundy -mt-1">
-          <button type="button" onClick={() => setSizeOpen(true)} className="py-1.5 cursor-pointer">
+        <div className="flex justify-between text-[16px] px-1">
+          <TextButton onClick={() => setSizeOpen(true)} className="py-1.5">
             Shape looks off?
-          </button>
-          <button type="button" onClick={onAnother} className="py-1.5 cursor-pointer">
+          </TextButton>
+          <TextButton onClick={onAnother} className="py-1.5">
             Start another
-          </button>
+          </TextButton>
         </div>
       )}
     </Screen>

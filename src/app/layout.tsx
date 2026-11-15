@@ -1,26 +1,25 @@
 import type { Metadata, Viewport } from 'next';
-import { Atkinson_Hyperlegible, Source_Serif_4 } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 
-const sourceSerif = Source_Serif_4({ subsets: ['latin'], variable: '--font-source-serif', style: ['normal', 'italic'], display: 'swap' });
-const atkinson = Atkinson_Hyperlegible({ subsets: ['latin'], weight: ['400', '700'], variable: '--font-atkinson', display: 'swap' });
+const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta', style: ['normal', 'italic'], display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'GallerySnap',
-  description: 'Get your art photos cropped and straightened in a snap.',
+  description: 'Photos of your artwork, cropped and straightened in a snap.',
   applicationName: 'GallerySnap',
   appleWebApp: { capable: true, title: 'GallerySnap', statusBarStyle: 'default' },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#f6f0e4',
+  themeColor: '#f3f3f3',
   width: 'device-width',
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${sourceSerif.variable} ${atkinson.variable}`}>
+    <html lang="en" className={jakarta.variable}>
       <body>{children}</body>
     </html>
   );

@@ -10,13 +10,15 @@ import { addTurns, displayQuad, fromDisplay, type Quad } from '@/lib/geometry';
 import { makeDisplayUrl } from '@/lib/images';
 import { GooglePhotosError, googlePhotosAvailable, loadGoogleScript, saveToGooglePhotos, signIn } from '@/lib/googlePhotos';
 import { activeCorners, askUprightTurns, disposePainting, findCorners, loadPainting, makeFullResult, makeResultPreview, resultKey } from '@/lib/pipeline';
+import { useSettings } from '@/lib/settings';
 import type { Mode, Painting } from '@/lib/types';
 import { SavedStep, WallStep } from './BatchSteps';
 import PhotoStep from './PhotoStep';
 import SaveStep, { type SaveStatus } from './SaveStep';
 import { PhoneAdjust, PhoneFinding, PhoneFound, PhoneSave } from './PhoneSteps';
 import { AdjustView, FindingView, FoundView } from './StraightenStep';
-import { Button, Header, IconButton, MagnifierIcon, PhoneHeader, PhotoIcon, type StepName } from './ui';
+import SettingsMenu from './SettingsMenu';
+import { Header, IconButton, MagnifierIcon, PhoneHeader, PillButton, type StepName } from './ui';
 import { usePhone } from '@/lib/usePhone';
 
 type View = 'photo' | 'finding' | 'found' | 'adjust' | 'save' | 'wall' | 'saved';
@@ -30,7 +32,8 @@ function friendly(err: unknown): string {
 
 export default function App() {
   const [view, setView] = useState<View>('photo');
-  const [mode, setMode] = useState<Mode>('auto');
+  // Find the corners automatically, unless that's switched off in Settings.
+  const mode: Mode = useSettings().findCorners ? 'auto' : 'manual';
   const [paintings, setPaintings] = useState<Painting[]>([]);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
@@ -362,35 +365,44 @@ export default function App() {
         step={step}
         count={paintings.length}
         onHome={startOver}
+        showSteps={view !== 'photo'}
         className={`max-sm:hidden ${view === 'photo' ? 'sticky top-0 z-20 bg-wall' : ''}`}
-        nav={
+        right={
           view === 'photo' ? (
-            <nav className="flex items-center gap-6 font-sans font-bold text-[16px] text-burgundy">
-              <a href="#what-it-does" className="max-md:hidden hover:underline">What it does</a>
-              <a href="#what-its-for" className="max-md:hidden hover:underline">What it&rsquo;s for</a>
-              <Button size="sm" className="!px-4" disabled={opening} onClick={() => browseRef.current?.click()}>
-                <PhotoIcon className="w-5 h-5 flex-none" />
-                Upload your photos
-              </Button>
+            <nav className="flex items-center gap-7 font-bold text-[16px]">
+              <a href="#what-it-does" className="max-md:hidden hover:text-rasp">
+                What it does
+              </a>
+              <div className="flex items-center gap-3">
+                <PillButton disabled={opening} onClick={() => browseRef.current?.click()}>
+                  Choose photos
+                </PillButton>
+                <SettingsMenu round />
+              </div>
             </nav>
-          ) : undefined
+          ) : (
+            <PillButton onClick={startOver}>{isBatch ? 'Start over' : 'New photo'}</PillButton>
+          )
         }
       />
       <PhoneHeader
         step={step}
+        count={view === 'wall' || view === 'saved' ? paintings.length : undefined}
         onHome={startOver}
         onBack={phoneBack}
         className="sm:hidden"
         right={
-          view === 'adjust' ? (
+          view === 'photo' ? (
+            <SettingsMenu />
+          ) : view === 'adjust' ? (
             <IconButton label="Magnifier" pressed={magnifier} onClick={() => setMagnifier(!magnifier)}>
-              <MagnifierIcon className="w-[22px] h-[22px]" />
+              <MagnifierIcon className="w-5 h-5" />
             </IconButton>
           ) : undefined
         }
       />
 
-      {view === 'photo' && <PhotoStep mode={mode} onModeChange={setMode} onFiles={addFiles} busy={opening} error={photoError} browseRef={browseRef} cameraRef={cameraRef} />}
+      {view === 'photo' && <PhotoStep onFiles={addFiles} busy={opening} error={photoError} browseRef={browseRef} cameraRef={cameraRef} />}
 
       {view === 'finding' && current && (phone ? <PhoneFinding src={current.displayUrl} name={current.name} /> : <FindingView src={current.displayUrl} name={current.name} />)}
 
