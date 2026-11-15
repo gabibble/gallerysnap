@@ -16,8 +16,23 @@ const SCOPES = [
 const API = 'https://photoslibrary.googleapis.com/v1';
 const ALBUM_KEY = 'gallerysnap.albumId';
 
-export const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
+// GallerySnap's own Google sign-in ID. It is public by design (Google shows it
+// to every visitor in the sign-in window), so it lives here rather than as a
+// secret. Set NEXT_PUBLIC_GOOGLE_CLIENT_ID to use a different Google project.
+const GALLERYSNAP_CLIENT_ID = '1050467857496-94ugos01550iui1b9495jlgcihkgmrjo.apps.googleusercontent.com';
+export const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || GALLERYSNAP_CLIENT_ID;
 export const googlePhotosAvailable = GOOGLE_CLIENT_ID.length > 0;
+
+/**
+ * The Google Photos button is hidden unless this browser has been switched on
+ * by visiting /photos-on (see src/app/photos-on/route.ts). The Google project
+ * stays in Testing mode, so only its listed test users could use it anyway.
+ */
+export const PHOTOS_COOKIE = 'gallerysnap_photos';
+export function googlePhotosSwitchedOn(): boolean {
+  if (!googlePhotosAvailable || typeof document === 'undefined') return false;
+  return document.cookie.split('; ').includes(`${PHOTOS_COOKIE}=on`);
+}
 
 type TokenResponse = { access_token?: string; expires_in?: number; error?: string; error_description?: string };
 type TokenClient = { requestAccessToken: (options?: { prompt?: string }) => void };

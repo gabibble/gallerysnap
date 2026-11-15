@@ -2,13 +2,13 @@
 
 // The whole app: one page that moves through Photo -> Straighten -> Save.
 // With several photos it shows the "gallery wall" instead.
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { warmUp } from '@/lib/cvClient';
 import { downloadAll, downloadEach, downloadOne, shareFiles } from '@/lib/download';
 import { saveTarget } from '@/lib/saveTarget';
 import { addTurns, displayQuad, fromDisplay, type Quad } from '@/lib/geometry';
 import { makeDisplayUrl } from '@/lib/images';
-import { GooglePhotosError, googlePhotosAvailable, loadGoogleScript, saveToGooglePhotos, signIn } from '@/lib/googlePhotos';
+import { GooglePhotosError, googlePhotosAvailable, googlePhotosSwitchedOn, loadGoogleScript, saveToGooglePhotos, signIn } from '@/lib/googlePhotos';
 import { activeCorners, askUprightTurns, disposePainting, findCorners, loadPainting, makeFullResult, makeResultPreview, resultKey } from '@/lib/pipeline';
 import { useSettings } from '@/lib/settings';
 import type { Mode, Painting } from '@/lib/types';
@@ -24,6 +24,9 @@ import { usePhone } from '@/lib/usePhone';
 type View = 'photo' | 'finding' | 'found' | 'adjust' | 'save' | 'wall' | 'saved';
 
 const NOT_SET_UP = 'Saving to Google Photos is not switched on for this site yet. You can use Download for now.';
+
+// The Google Photos switch (a cookie) never changes while the page is open.
+const noSubscribe = () => () => {};
 
 function friendly(err: unknown): string {
   if (err instanceof GooglePhotosError) return err.message;
@@ -63,9 +66,12 @@ export default function App() {
     paintingsRef.current = paintings;
   }, [paintings]);
 
+  // Google Photos is only offered in browsers switched on via /photos-on.
+  const googleOn = useSyncExternalStore(noSubscribe, googlePhotosSwitchedOn, () => false);
+
   useEffect(() => {
     warmUp();
-    if (googlePhotosAvailable) loadGoogleScript().catch(() => {});
+    if (googlePhotosSwitchedOn()) loadGoogleScript().catch(() => {});
   }, []);
 
   const isBatch = paintings.length > 1;
@@ -457,7 +463,7 @@ export default function App() {
           <PhoneSave
             painting={current}
             status={saveStatus}
-            onGoogle={saveToGoogle}
+            onGoogle={googleOn ? saveToGoogle : undefined}
             onDownload={download}
             onDimensions={(text) => finish(current.id, { dimensions: text })}
             onAnother={startOver}
@@ -466,7 +472,7 @@ export default function App() {
           <SaveStep
             painting={current}
             status={saveStatus}
-            onGoogle={saveToGoogle}
+            onGoogle={googleOn ? saveToGoogle : undefined}
             onDownload={download}
             onDimensions={(text) => finish(current.id, { dimensions: text })}
             onBack={backFromSave}
@@ -491,7 +497,7 @@ export default function App() {
           }}
           onTurn={turn}
           redrawing={redrawing}
-          onGoogle={saveToGoogle}
+          onGoogle={googleOn ? saveToGoogle : undefined}
           onDownload={download}
           onStartOver={startOver}
         />

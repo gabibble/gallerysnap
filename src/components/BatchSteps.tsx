@@ -14,7 +14,8 @@ type WallProps = {
   onFix: (id: string) => void;
   onTurn: (id: string, by: number) => void;
   redrawing: boolean;
-  onGoogle: () => void;
+  /** Left out when Google Photos isn't switched on in this browser. */
+  onGoogle?: () => void;
   onDownload: () => void;
   onStartOver: () => void;
 };
@@ -89,11 +90,13 @@ export function WallStep({ paintings, status, onFix, onTurn, redrawing, onGoogle
         })}
       </ul>
 
-      <div className="grid sm:grid-cols-2 gap-2.5 sm:gap-3.5 w-full max-w-[820px] mt-2">
-        <Button className="sm:!min-h-[68px] sm:!rounded-[20px]" onClick={onGoogle} busy={saving && status.what === 'google'} disabled={saving || redrawing || working > 0 || good === 0}>
-          <GooglePhotosIcon className="w-[30px] h-[30px]" />
-          Save all to Google Photos
-        </Button>
+      <div className={`grid gap-2.5 sm:gap-3.5 w-full mt-2 ${onGoogle ? 'sm:grid-cols-2 max-w-[820px]' : 'max-w-[400px]'}`}>
+        {onGoogle && (
+          <Button className="sm:!min-h-[68px] sm:!rounded-[20px]" onClick={onGoogle} busy={saving && status.what === 'google'} disabled={saving || redrawing || working > 0 || good === 0}>
+            <GooglePhotosIcon className="w-[30px] h-[30px]" />
+            Save all to Google Photos
+          </Button>
+        )}
         <Button className="sm:!min-h-[68px] sm:!rounded-[20px]" onClick={onDownload} busy={saving && status.what === 'download'} disabled={saving || redrawing || working > 0 || good === 0}>
           <DownloadIcon className="w-6 h-6 flex-none" />
           {SAVE_LABEL[target].all}
