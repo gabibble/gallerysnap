@@ -48,7 +48,7 @@ off and the app asks you to place corners more often.
 
 | Name | What it's for |
 | --- | --- |
-| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google sign-in for saving to Google Photos |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Optional: a different Google sign-in for saving to Google Photos (GallerySnap's own is built in) |
 | `ANTHROPIC_API_KEY` | The AI helper for tricky photos (secret, server only) |
 | `GALLERYSNAP_AI_MODEL` | Optional: which Claude model the helper uses (default `claude-opus-5-5`) |
 
@@ -61,7 +61,8 @@ off and the app asks you to place corners more often.
    Under **Audience**, add the Google accounts that may use it while it is in testing (yours, Chris's).
 4. Open **Clients** (or **Credentials → Create credentials → OAuth client ID**), choose **Web application**, and under
    **Authorized JavaScript origins** add `http://localhost:3000` and your Vercel address (for example `https://gallerysnap.vercel.app`).
-5. Copy the **Client ID** into `NEXT_PUBLIC_GOOGLE_CLIENT_ID`.
+5. Copy the **Client ID** into `NEXT_PUBLIC_GOOGLE_CLIENT_ID`. (GallerySnap's own client ID is already built
+   into `src/lib/googlePhotos.ts`, so this is only needed for a different Google project.)
 
 While the Google app is in "Testing", only the accounts you list can sign in.
 To open it to everyone, submit it for Google's verification from the same page.

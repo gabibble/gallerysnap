@@ -16,7 +16,11 @@ const SCOPES = [
 const API = 'https://photoslibrary.googleapis.com/v1';
 const ALBUM_KEY = 'gallerysnap.albumId';
 
-export const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
+// GallerySnap's own Google sign-in ID. It is public by design (Google shows it
+// to every visitor in the sign-in window), so it lives here rather than as a
+// secret. Set NEXT_PUBLIC_GOOGLE_CLIENT_ID to use a different Google project.
+const GALLERYSNAP_CLIENT_ID = '1050467857496-94ugos01550iui1b9495jlgcihkgmrjo.apps.googleusercontent.com';
+export const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || GALLERYSNAP_CLIENT_ID;
 export const googlePhotosAvailable = GOOGLE_CLIENT_ID.length > 0;
 
 type TokenResponse = { access_token?: string; expires_in?: number; error?: string; error_description?: string };
