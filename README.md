@@ -67,6 +67,11 @@ off and the app asks you to place corners more often.
 While the Google app is in "Testing", only the accounts you list can sign in.
 To open it to everyone, submit it for Google's verification from the same page.
 
+The **Save to Google Photos** button is hidden by default; everyone else just sees Download.
+To show it in someone's browser, have them open `/photos-on` once
+(for example `https://gallery-snap.vercel.app/photos-on`). It stays on in that browser for about a year,
+and opening the link again renews it. `/photos-off` hides it again. They must also be a test user in the Google project.
+
 ### Setting up the AI helper
 
 Create a key at [platform.claude.com](https://platform.claude.com/) and put it in `ANTHROPIC_API_KEY`.

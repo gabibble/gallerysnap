@@ -189,7 +189,8 @@ export function PhoneFinding({ src, name }: { src: string; name: string }) {
 type SaveProps = {
   painting: Painting;
   status: SaveStatus;
-  onGoogle: () => void;
+  /** Left out when Google Photos isn't switched on in this browser. */
+  onGoogle?: () => void;
   onDownload: () => void;
   onDimensions: (text: string) => void;
   onAnother: () => void;
@@ -236,10 +237,12 @@ export function PhoneSave({ painting, status, onGoogle, onDownload, onDimensions
         </div>
       </div>
       <div className="flex gap-2.5">
-        <Button size="md" onClick={onGoogle} busy={working && status.what === 'google'} disabled={working} className={tall}>
-          <GooglePhotosIcon className="w-8 h-8 flex-none" />
-          Google Photos
-        </Button>
+        {onGoogle && (
+          <Button size="md" onClick={onGoogle} busy={working && status.what === 'google'} disabled={working} className={tall}>
+            <GooglePhotosIcon className="w-8 h-8 flex-none" />
+            Google Photos
+          </Button>
+        )}
         <Button size="md" onClick={onDownload} busy={working && status.what === 'download'} disabled={working} className={tall}>
           <DownloadIcon className="w-7 h-7 flex-none" />
           {SAVE_LABEL[target].one}

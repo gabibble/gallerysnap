@@ -19,7 +19,8 @@ export type SaveStatus =
 type Props = {
   painting: Painting;
   status: SaveStatus;
-  onGoogle: () => void;
+  /** Left out when Google Photos isn't switched on in this browser. */
+  onGoogle?: () => void;
   onDownload: () => void;
   onDimensions: (text: string) => void;
   onBack: () => void;
@@ -62,11 +63,13 @@ export default function SaveStep({ painting, status, onGoogle, onDownload, onDim
           {painting.resultUrl && painting.resultSize && <Hung src={painting.resultUrl} alt={`${displayName(painting.name)}, cropped and straightened`} label="After" after size={painting.resultSize} />}
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-3.5 w-full max-w-[820px]">
-          <Button className="!min-h-[68px] !rounded-[20px]" onClick={onGoogle} busy={working && status.what === 'google'} disabled={working}>
-            <GooglePhotosIcon className="w-[30px] h-[30px]" />
-            Save to Google Photos
-          </Button>
+        <div className={`grid gap-3.5 w-full ${onGoogle ? 'sm:grid-cols-2 max-w-[820px]' : 'max-w-[400px]'}`}>
+          {onGoogle && (
+            <Button className="!min-h-[68px] !rounded-[20px]" onClick={onGoogle} busy={working && status.what === 'google'} disabled={working}>
+              <GooglePhotosIcon className="w-[30px] h-[30px]" />
+              Save to Google Photos
+            </Button>
+          )}
           <Button className="!min-h-[68px] !rounded-[20px]" onClick={onDownload} busy={working && status.what === 'download'} disabled={working}>
             <DownloadIcon className="w-6 h-6 flex-none" />
             {SAVE_LABEL[target].one}
@@ -74,7 +77,7 @@ export default function SaveStep({ painting, status, onGoogle, onDownload, onDim
         </div>
 
         <div aria-live="polite" className="text-center text-[17px] min-h-[1.5em]">
-          {status.kind === 'idle' && <p className="text-muted text-[15px]">Google Photos saves go into an album called &ldquo;{ALBUM_TITLE}&rdquo;.</p>}
+          {status.kind === 'idle' && onGoogle && <p className="text-muted text-[15px]">Google Photos saves go into an album called &ldquo;{ALBUM_TITLE}&rdquo;.</p>}
           {status.kind === 'working' && <p className="text-muted">{status.what === 'google' ? 'Saving to Google Photos…' : 'Getting your picture ready…'}</p>}
           {status.kind === 'saved' && (
             <p className="font-bold">
