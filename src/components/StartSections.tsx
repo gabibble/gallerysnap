@@ -1,7 +1,10 @@
 // What you see when you scroll down the start page: what the app does, then
 // an invitation to try it.
 import type { ReactNode } from 'react';
-import { ArrowRightIcon, Chip, CornersIcon, DownloadIcon, FrameIcon, LockIcon, StraightenIcon } from './ui';
+import { ArrowRightIcon, Chip, CornersIcon, DownloadIcon, FrameIcon, LockIcon } from './ui';
+
+/** Who made GallerySnap, for the footer. With no link set, the name shows as plain text. */
+const MAKER = { name: 'Julia Giebultowicz', url: '' };
 
 const line = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 const Svg = ({ children, className }: { children: ReactNode; className?: string }) => (
@@ -10,6 +13,8 @@ const Svg = ({ children, className }: { children: ReactNode; className?: string 
   </svg>
 );
 const CropIcon = ({ className }: { className?: string }) => <Svg className={className}><path d="M7 3v14h14M3 7h14v14" /></Svg>;
+// A picture hanging crooked, with the level line it should sit on.
+const LeanIcon = ({ className }: { className?: string }) => <Svg className={className}><path d="M5.2 8.6l12.4-3.3 2.6 9.7-12.4 3.3z" /><path d="M3 21h18" strokeDasharray="2.5 3" /></Svg>;
 const StackIcon = ({ className }: { className?: string }) => <Svg className={className}><rect x="3" y="8" width="13" height="12" rx="1.5" /><path d="M8 8V5.5A1.5 1.5 0 0 1 9.5 4h10A1.5 1.5 0 0 1 21 5.5v9a1.5 1.5 0 0 1-1.5 1.5H16" /></Svg>;
 
 type IconType = (p: { className?: string }) => ReactNode;
@@ -21,7 +26,7 @@ const pairs = [
 
 const features: { Icon: IconType; title: string; text: string }[] = [
   { Icon: CornersIcon, title: 'Finds the edges', text: 'It spots the four corners of your painting by itself. If it misses, you can drag them into place.' },
-  { Icon: StraightenIcon, title: 'Straightens the lean', text: 'Photos taken from a little to one side come out square, as if you had stood right in front.' },
+  { Icon: LeanIcon, title: 'Straightens the lean', text: 'Photos taken from a little to one side come out square, as if you had stood right in front.' },
   { Icon: CropIcon, title: 'Trims the background', text: 'The table, the wall and the floor are cut away, so only the artwork is left.' },
   { Icon: FrameIcon, title: 'Frame or no frame', text: 'Keep the frame in the picture or crop to the painting alone. You choose each time.' },
   { Icon: StackIcon, title: 'Several at once', text: 'Add a whole batch of paintings and check them together on one screen.' },
@@ -51,16 +56,22 @@ export default function StartSections({ children }: { children?: ReactNode }) {
             {pairs.map((p) => (
               <div key={p.before} className="bg-wall rounded-[24px] sm:rounded-[28px] p-4 sm:p-6 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-2 sm:gap-3.5 items-center">
                 <figure className="flex flex-col items-center gap-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img(p.before)} alt={p.beforeAlt} loading="lazy" className="max-h-[118px] sm:max-h-[190px] w-auto max-w-full rounded-[6px]" />
+                  {/* A fixed height for both pictures, so the two labels line up. */}
+                  <span className="h-[118px] sm:h-[190px] w-full flex items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img(p.before)} alt={p.beforeAlt} loading="lazy" className="max-h-full w-auto max-w-full rounded-[6px]" />
+                  </span>
                   <figcaption className="font-bold text-[13px] sm:text-[14px] text-muted">Your photo</figcaption>
                 </figure>
                 <span className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-ink text-white flex items-center justify-center" aria-hidden>
                   <ArrowRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </span>
                 <figure className="flex flex-col items-center gap-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img(p.after)} alt={p.afterAlt} loading="lazy" className="max-h-[118px] sm:max-h-[190px] w-auto max-w-full rounded-[6px]" />
+                  {/* A fixed height for both pictures, so the two labels line up. */}
+                  <span className="h-[118px] sm:h-[190px] w-full flex items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img(p.after)} alt={p.afterAlt} loading="lazy" className="max-h-full w-auto max-w-full rounded-[6px]" />
+                  </span>
                   <figcaption className="font-bold text-[13px] sm:text-[14px] text-muted">After GallerySnap</figcaption>
                 </figure>
                 <p className="col-span-3 text-[15px] sm:text-[16px] text-muted text-center mt-1">{p.note}</p>
@@ -105,10 +116,20 @@ export default function StartSections({ children }: { children?: ReactNode }) {
             <p className="flex items-center max-sm:justify-center gap-2 text-[14px] sm:text-[15px] text-muted">
               <LockIcon className="w-4 h-4 flex-none" />
               <span className="sm:hidden">No account needed. Your photos stay private.</span>
-              <span className="max-sm:hidden">No account needed. Your photos stay on this device.</span>
+              <span className="max-sm:hidden">No account needed. The straightening happens on this device.</span>
             </p>
           </div>
         </div>
+        <footer className="w-full max-w-[1200px] mx-auto pt-8 sm:pt-12 text-center text-[14px] sm:text-[15px] text-muted">
+          Designed &amp; built by{' '}
+          {MAKER.url ? (
+            <a href={MAKER.url} target="_blank" rel="noopener noreferrer" className="font-bold text-ink underline underline-offset-4 hover:text-rasp">
+              {MAKER.name}
+            </a>
+          ) : (
+            <b className="text-ink">{MAKER.name}</b>
+          )}
+        </footer>
       </section>
     </>
   );
