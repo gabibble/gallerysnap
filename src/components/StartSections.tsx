@@ -109,6 +109,12 @@ export default function StartSections({ children }: { children?: ReactNode }) {
             </p>
           </div>
         </div>
+        <footer className="w-full max-w-[1200px] mx-auto pt-8 sm:pt-12 text-center text-[14px] sm:text-[15px] text-muted">
+          Designed &amp; built by{' '}
+          <a href="https://juliagiebultowicz.com" target="_blank" rel="noopener noreferrer" className="font-bold text-ink underline underline-offset-4 hover:text-rasp">
+            Julia Giebultowicz
+          </a>
+        </footer>
       </section>
     </>
   );
