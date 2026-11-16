@@ -3,9 +3,6 @@
 import type { ReactNode } from 'react';
 import { ArrowRightIcon, Chip, CornersIcon, DownloadIcon, FrameIcon, LockIcon } from './ui';
 
-/** Who made GallerySnap, for the footer. With no link set, the name shows as plain text. */
-const MAKER = { name: 'Julia Giebultowicz', url: '' };
-
 const line = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 const Svg = ({ children, className }: { children: ReactNode; className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} aria-hidden {...line}>
@@ -122,13 +119,9 @@ export default function StartSections({ children }: { children?: ReactNode }) {
         </div>
         <footer className="w-full max-w-[1200px] mx-auto pt-8 sm:pt-12 text-center text-[14px] sm:text-[15px] text-muted">
           Designed &amp; built by{' '}
-          {MAKER.url ? (
-            <a href={MAKER.url} target="_blank" rel="noopener noreferrer" className="font-bold text-ink underline underline-offset-4 hover:text-rasp">
-              {MAKER.name}
-            </a>
-          ) : (
-            <b className="text-ink">{MAKER.name}</b>
-          )}
+          <a href="https://juliagiebultowicz.com" target="_blank" rel="noopener noreferrer" className="font-bold text-ink underline underline-offset-4 hover:text-rasp">
+            Julia Giebultowicz
+          </a>
         </footer>
       </section>
     </>
