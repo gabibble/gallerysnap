@@ -119,7 +119,7 @@ export default function PhotoStep({ onFiles, busy, error, browseRef, cameraRef }
 
           <p className="flex gap-2 text-[14px] text-muted max-w-[560px] leading-normal max-lg:text-center">
             <LockIcon className="w-4 h-4 flex-none mt-0.5" />
-            <span>Your photos stay on this device. If the app can&rsquo;t find the edges by itself, a small copy goes to an AI helper to find them. Nothing else is sent anywhere unless you save to Google Photos.</span>
+            <span>The straightening happens on this device. A small copy of each photo goes to an AI helper, to check which way up the painting is and to find the edges when the app can&rsquo;t. Nothing else is sent anywhere.</span>
           </p>
         </div>
 

@@ -207,27 +207,49 @@ export function BackLink({ onClick, children }: { onClick: () => void; children:
 }
 
 /** The on/off track every switch uses. */
-function Track({ on, small = false }: { on: boolean; small?: boolean }) {
+function Track({ on, small = false, tiny = false }: { on: boolean; small?: boolean; tiny?: boolean }) {
+  const size = tiny ? 'w-10 h-6' : small ? 'w-[46px] h-7' : 'w-[50px] h-[30px]';
+  const knob = tiny ? 'w-[18px] h-[18px]' : small ? 'w-[22px] h-[22px]' : 'w-6 h-6';
   return (
-    <span aria-hidden className={`flex-none rounded-full flex items-center p-[3px] transition-colors ${small ? 'w-[46px] h-7' : 'w-[50px] h-[30px]'} ${on ? 'bg-ink justify-end' : 'bg-track justify-start'}`}>
-      <span className={`rounded-full bg-white ${small ? 'w-[22px] h-[22px]' : 'w-6 h-6'}`} />
+    <span aria-hidden className={`flex-none rounded-full flex items-center p-[3px] transition-colors ${size} ${on ? 'bg-ink justify-end' : 'bg-track justify-start'}`}>
+      <span className={`rounded-full bg-white ${knob}`} />
     </span>
   );
 }
 
 /** A labelled on/off switch on a soft grey bar (desktop side panels). */
-export function Switch({ label, checked, onChange, disabled, className = '' }: { label: ReactNode; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; className?: string }) {
+export function Switch({
+  label,
+  checked,
+  onChange,
+  disabled,
+  compact = false,
+  className = '',
+  'aria-label': ariaLabel,
+}: {
+  label: ReactNode;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+  /** A tighter bar with a smaller track, for the cards on the gallery wall. */
+  compact?: boolean;
+  className?: string;
+  'aria-label'?: string;
+}) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={ariaLabel}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`flex items-center justify-between gap-3 min-h-[54px] px-4 rounded-[16px] bg-wall font-bold text-[16px] text-ink text-left cursor-pointer disabled:opacity-60 disabled:cursor-default ${className}`}
+      className={`flex items-center justify-between bg-wall font-bold text-ink text-left cursor-pointer disabled:opacity-60 disabled:cursor-default ${
+        compact ? 'gap-1.5 min-h-[44px] px-2 rounded-[14px] text-[14px]' : 'gap-3 min-h-[54px] px-4 rounded-[16px] text-[16px]'
+      } ${className}`}
     >
-      <span className="flex items-center gap-2">{label}</span>
-      <Track on={checked} small />
+      <span className={`flex items-center ${compact ? 'gap-1.5' : 'gap-2'}`}>{label}</span>
+      <Track on={checked} small tiny={compact} />
     </button>
   );
 }

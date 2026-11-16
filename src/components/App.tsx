@@ -257,6 +257,14 @@ export default function App() {
     if (p) restyle(id, { turns: addTurns(p.turns, by) });
   };
   const setEnhance = (id: string, on: boolean) => restyle(id, { enhance: on });
+  /** Enhance on or off for every painting, one after another. */
+  async function setEnhanceAll(on: boolean) {
+    const mySession = session.current;
+    for (const { id } of paintingsRef.current.filter((p) => p.enhance !== on)) {
+      if (mySession !== session.current) return;
+      await restyle(id, { enhance: on });
+    }
+  }
 
   async function fullResult(p: Painting): Promise<Blob> {
     const key = resultKey(p);
@@ -496,6 +504,8 @@ export default function App() {
             setView('adjust');
           }}
           onTurn={turn}
+          onEnhance={setEnhance}
+          onEnhanceAll={setEnhanceAll}
           redrawing={redrawing}
           onGoogle={googleOn ? saveToGoogle : undefined}
           onDownload={download}
