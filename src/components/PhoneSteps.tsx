@@ -218,7 +218,6 @@ export function PhoneSave({ painting, status, onGoogle, onDownload, onDimensions
         </div>
         <h1 className="text-[25px]">All done.</h1>
         <div aria-live="polite" className="text-[16px] leading-snug">
-          {status.kind === 'idle' && <p className="text-muted">Where should it go?</p>}
           {status.kind === 'working' && <p className="text-muted">{status.what === 'google' ? 'Saving to Google Photos…' : 'Getting your picture ready…'}</p>}
           {status.kind === 'saved' && (
             <p className="font-bold">

@@ -6,13 +6,16 @@ import { ALBUM_TITLE } from '@/lib/googlePhotos';
 import type { Painting } from '@/lib/types';
 import type { SaveStatus } from './SaveStep';
 import { SAVE_LABEL, SAVED_ALL_TEXT, useSaveTarget } from '@/lib/saveTarget';
-import { Button, CheckIcon, Chip, DownloadIcon, GooglePhotosIcon, RotateLeftIcon, RotateRightIcon, TextButton } from './ui';
+import { Button, CheckIcon, Chip, DownloadIcon, GooglePhotosIcon, IconButton, RotateLeftIcon, RotateRightIcon, Switch, TextButton, WandIcon } from './ui';
 
 type WallProps = {
   paintings: Painting[];
   status: SaveStatus;
   onFix: (id: string) => void;
   onTurn: (id: string, by: number) => void;
+  onEnhance: (id: string, on: boolean) => void;
+  /** Switch Enhance on or off for every painting at once. */
+  onEnhanceAll: (on: boolean) => void;
   redrawing: boolean;
   /** Left out when Google Photos isn't switched on in this browser. */
   onGoogle?: () => void;
@@ -20,13 +23,14 @@ type WallProps = {
   onStartOver: () => void;
 };
 
-export function WallStep({ paintings, status, onFix, onTurn, redrawing, onGoogle, onDownload, onStartOver }: WallProps) {
+export function WallStep({ paintings, status, onFix, onTurn, onEnhance, onEnhanceAll, redrawing, onGoogle, onDownload, onStartOver }: WallProps) {
   const working = paintings.filter((p) => p.status === 'working').length;
   const good = paintings.filter((p) => p.status === 'good').length;
   const needs = paintings.filter((p) => p.status === 'needs').length;
   const saving = status.kind === 'working';
   const target = useSaveTarget();
   const total = paintings.length;
+  const allEnhanced = paintings.every((p) => p.enhance);
 
   let sub: string;
   if (working > 0) sub = `Working on painting ${total - working + 1} of ${total}…`;
@@ -43,18 +47,37 @@ export function WallStep({ paintings, status, onFix, onTurn, redrawing, onGoogle
         <span>{sub}</span>
       </p>
 
+      <Switch
+        className="w-full max-w-[260px] !bg-card"
+        checked={allEnhanced}
+        onChange={onEnhanceAll}
+        disabled={redrawing || saving || working > 0}
+        label={
+          <>
+            <WandIcon className="w-5 h-5 flex-none" />
+            Enhance all
+          </>
+        }
+      />
+
       <ul className="flex flex-wrap justify-center gap-2.5 sm:gap-4 w-full max-w-[1120px]">
         {paintings.map((p) => {
           const need = p.status === 'needs';
           return (
             <li key={p.id} className={`w-[calc(50%-5px)] sm:w-[268px] flex flex-col items-start gap-2 sm:gap-2.5 p-2 sm:p-3 rounded-[20px] sm:rounded-[24px] border-2 bg-card ${need ? 'border-ink' : 'border-card'}`}>
-              <div className="w-full h-[104px] sm:h-[180px] rounded-[12px] sm:rounded-[14px] bg-wall flex items-center justify-center overflow-hidden">
+              <div className="relative w-full h-[104px] sm:h-[180px] rounded-[12px] sm:rounded-[14px] bg-wall flex items-center justify-center overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={p.status === 'good' && p.resultUrl ? p.resultUrl : p.previewUrl}
                   alt={p.status === 'good' ? `${displayName(p.name)}, straightened` : `${displayName(p.name)}, original photo`}
                   className={`max-w-[90%] max-h-[92px] sm:max-h-[160px] ${p.status === 'working' ? 'opacity-50' : ''}`}
                 />
+                {p.enhance && p.status !== 'working' && (
+                  <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 py-1 pl-1.5 pr-2 rounded-full bg-ink text-white text-[12px] font-bold leading-none">
+                    <WandIcon className="w-3.5 h-3.5" />
+                    Enhanced
+                  </span>
+                )}
               </div>
               <p className="text-[15px] text-muted truncate max-w-full max-sm:hidden">{displayName(p.name)}</p>
               {p.status === 'working' && <Chip className="!text-muted">Working…</Chip>}
@@ -67,19 +90,39 @@ export function WallStep({ paintings, status, onFix, onTurn, redrawing, onGoogle
               {p.status === 'good' && p.suggestedTurns ? (
                 <p className="text-[15px] text-need font-bold">{p.suggestedTurns === 2 ? 'Looks upside down.' : 'Looks like it is on its side.'}</p>
               ) : null}
+              {p.status === 'good' && p.suggestedTurns ? (
+                <Button size="sm" className="w-full" disabled={redrawing || saving} onClick={() => onTurn(p.id, p.suggestedTurns === 3 ? -1 : p.suggestedTurns!)}>
+                  Turn upright
+                </Button>
+              ) : null}
               {p.status === 'good' && (
-                <div className="flex gap-2 w-full">
-                  {p.suggestedTurns ? (
-                    <Button size="sm" className="flex-1" disabled={redrawing || saving} onClick={() => onTurn(p.id, p.suggestedTurns === 3 ? -1 : p.suggestedTurns!)}>
-                      Turn upright
-                    </Button>
-                  ) : null}
-                  <Button size="sm" variant="outline" className="flex-1" disabled={redrawing || saving} onClick={() => onTurn(p.id, -1)} aria-label={`Turn ${displayName(p.name)} left`}>
+                <div className="flex max-sm:justify-between sm:gap-1.5 w-full">
+                  <IconButton label={`Turn ${displayName(p.name)} left`} tone="wall" disabled={redrawing || saving} onClick={() => onTurn(p.id, -1)}>
                     <RotateLeftIcon className="w-5 h-5" />
-                  </Button>
-                  <Button size="sm" variant="outline" className="flex-1" disabled={redrawing || saving} onClick={() => onTurn(p.id, 1)} aria-label={`Turn ${displayName(p.name)} right`}>
+                  </IconButton>
+                  <IconButton label={`Turn ${displayName(p.name)} right`} tone="wall" disabled={redrawing || saving} onClick={() => onTurn(p.id, 1)}>
                     <RotateRightIcon className="w-5 h-5" />
-                  </Button>
+                  </IconButton>
+                  {/* Phone cards are too narrow for a labelled switch: a wand button that stays pressed. */}
+                  <span className="sm:hidden flex">
+                    <IconButton label={`Enhance colors of ${displayName(p.name)}`} tone="wall" pressed={p.enhance} disabled={redrawing || saving} onClick={() => onEnhance(p.id, !p.enhance)}>
+                      <WandIcon className="w-5 h-5" />
+                    </IconButton>
+                  </span>
+                  <Switch
+                    compact
+                    className="max-sm:hidden flex-1 min-w-0"
+                    aria-label={`Enhance colors of ${displayName(p.name)}`}
+                    checked={p.enhance}
+                    onChange={(on) => onEnhance(p.id, on)}
+                    disabled={redrawing || saving}
+                    label={
+                      <>
+                        <WandIcon className="w-5 h-5 flex-none" />
+                        Enhance
+                      </>
+                    }
+                  />
                 </div>
               )}
               <Button size="sm" variant={need ? 'solid' : 'outline'} className="w-full mt-auto" disabled={p.status === 'working' || saving} onClick={() => onFix(p.id)}>
